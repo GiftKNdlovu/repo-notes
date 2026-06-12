@@ -124,4 +124,135 @@ def test_omits_git_when_not_repo():
 def test_omits_empty_sections():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate()
-    assert "## " not in md  # No section headers
+    assert "## " not in md
+
+
+# Badge tests
+
+def test_badges_show_stats():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        stats=StatsResult(
+            total_files=10,
+            total_lines=500,
+            total_size=2048,
+            by_language={"python": {"files": 5, "lines": 300, "size": 1024}},
+            largest_files=[],
+        )
+    )
+    assert "**10** files" in md
+    assert "**500** lines" in md
+    assert "**1** languages" in md
+
+
+def test_badges_show_security():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        security=SecurityResult(
+            findings=[{"file": "x.py", "type": "Key", "line": 1, "preview": "sk-****"}],
+            env_files=[],
+        ),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+    )
+    assert "**1** security issue" in md
+
+
+def test_badges_show_git():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        git=GitResult(
+            is_repo=True,
+            current_branch="main",
+            recent_commits=[{"hash": "a", "author": "x", "date": "d", "message": "m"}],
+            branches=[],
+            contributors=[],
+            remote_url="",
+        ),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+    )
+    assert "branch **main**" in md
+
+
+def test_badges_omitted_when_no_data():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate()
+    # No badges should appear when nothing is passed
+    assert "files" not in md or "**0** files" not in md  # no stats data
+
+
+# Collapsible tests
+
+def test_stats_table_collapsed():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        stats=StatsResult(
+            total_files=5,
+            total_lines=100,
+            total_size=500,
+            by_language={"python": {"files": 3, "lines": 60, "size": 300}},
+            largest_files=[(Path("main.py"), 50)],
+        )
+    )
+    assert "<details>" in md
+    assert "<summary>By Language" in md
+    assert "<summary>Largest Files" in md
+
+
+def test_security_findings_collapsed():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        security=SecurityResult(
+            findings=[{"file": "x.py", "type": "Key", "line": 1, "preview": "sk-****"}],
+            env_files=[],
+        )
+    )
+    assert "<details>" in md
+    assert "<summary>Potential Secrets" in md
+
+
+def test_structure_not_collapsed():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        structure=StructureResult(tree="root/", file_count=1, dir_count=0)
+    )
+    assert "<details>" not in md
+
+
+# Section ordering tests
+
+def test_section_order():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        structure=StructureResult(tree="root/", file_count=1, dir_count=0),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+        section_order=["stats", "structure"],
+    )
+    # Code Statistics should appear before Project Structure
+    assert md.index("## Code Statistics") < md.index("## Project Structure")
+
+
+def test_section_order_default():
+    gen = MarkdownGenerator(Path("root"))
+    md_default = gen.generate(
+        structure=StructureResult(tree="root/", file_count=1, dir_count=0),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+    )
+    md_ordered = gen.generate(
+        structure=StructureResult(tree="root/", file_count=1, dir_count=0),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+        section_order=None,
+    )
+    # Both should have same structure
+    assert "## Project Structure" in md_default
+    assert "## Code Statistics" in md_ordered
+
+
+def test_section_order_skips_missing():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+        section_order=["structure", "stats"],
+    )
+    # structure is in order but not passed, so only stats appears
+    assert "## Code Statistics" in md
+    assert "## Project Structure" not in md

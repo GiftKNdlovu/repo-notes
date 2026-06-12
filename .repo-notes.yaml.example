@@ -34,3 +34,14 @@ structure:
 # Security scanning
 security:
   entropy_threshold: 4.5  # Shannon entropy (lower = more sensitive)
+
+# Output settings
+output:
+  order:
+    - structure
+    - key_files
+    - stats
+    - deps
+    - git
+    - arch
+    - security

@@ -33,6 +33,19 @@ class StructureConfig:
 
 
 @dataclass
+class OutputConfig:
+    order: list[str] = field(default_factory=lambda: [
+        "structure",
+        "key_files",
+        "stats",
+        "deps",
+        "git",
+        "arch",
+        "security",
+    ])
+
+
+@dataclass
 class Config:
     exclude_patterns: list[str] = field(default_factory=list)
     include_hidden: bool = False
@@ -40,6 +53,7 @@ class Config:
     extractors: ExtractorConfig = field(default_factory=ExtractorConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     structure: StructureConfig = field(default_factory=StructureConfig)
+    output: OutputConfig = field(default_factory=OutputConfig)
 
     @classmethod
     def load(cls, root: Path | None = None, path: Path | None = None) -> "Config":
@@ -79,11 +93,13 @@ class Config:
         ext_cfg = ExtractorConfig(**data.pop("extractors", {}))
         sec_cfg = SecurityConfig(**data.pop("security", {}))
         str_cfg = StructureConfig(**data.pop("structure", {}))
+        out_cfg = OutputConfig(**data.pop("output", {}))
         return Config(
             detectors=det_cfg,
             extractors=ext_cfg,
             security=sec_cfg,
             structure=str_cfg,
+            output=out_cfg,
             **data,
         )
 
@@ -110,5 +126,8 @@ class Config:
             "structure": {
                 "max_depth": self.structure.max_depth,
                 "show_hidden": self.structure.show_hidden,
+            },
+            "output": {
+                "order": self.output.order,
             },
         }
