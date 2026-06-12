@@ -142,7 +142,7 @@ def cli(path, config, output, max_depth, include_hidden):
 
     # Generate markdown
     generator = MarkdownGenerator(root)
-    markdown = generator.generate(**results)
+    markdown = generator.generate(**results, section_order=cfg.output.order)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(markdown, encoding="utf-8")

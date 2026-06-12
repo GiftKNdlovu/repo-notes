@@ -4,25 +4,25 @@ Planned features for `repo-notes`, organized by category.
 
 ## Language Detectors
 
-- [ ] **Java** — `.java`, `.class` with Maven/Gradle entry-point detection (Spring Boot, `pom.xml`, `build.gradle`)
-- [ ] **C/C++** — `.c`, `.h`, `.cpp`, `.hpp`, `.cc`, `.cxx` (CMakeLists.txt, Makefile)
-- [ ] **Ruby** — `.rb`, `.erb` (Gemfile, Rakefile, `config/routes.rb`)
-- [ ] **PHP** — `.php` (composer.json, artisan, Symfony/Laravel patterns)
-- [ ] **Swift** — `.swift` (Package.swift)
-- [ ] **Kotlin** — `.kt`, `.kts` (build.gradle.kts, Android projects)
-- [ ] **R** — `.r`, `.rmd`
-- [ ] **Shell/Scripting** — `.sh`, `.bash`, `.zsh`, `.ps1`
-- [ ] **SQL** — `.sql` with migration folder detection
-- [ ] **Docker** — `Dockerfile`, `docker-compose` as a pseudo-language
+- [x] **Java** — `.java`, `.class` with Maven/Gradle entry-point detection (Spring Boot, `pom.xml`, `build.gradle`)
+- [x] **C/C++** — `.c`, `.h`, `.cpp`, `.hpp`, `.cc`, `.cxx` (CMakeLists.txt, Makefile)
+- [x] **Ruby** — `.rb`, `.erb` (Gemfile, Rakefile, `config/routes.rb`)
+- [x] **PHP** — `.php` (composer.json, artisan, Symfony/Laravel patterns)
+- [x] **Swift** — `.swift` (Package.swift)
+- [x] **Kotlin** — `.kt`, `.kts` (build.gradle.kts, Android projects)
+- [x] **R** — `.r`, `.rmd`
+- [x] **Shell/Scripting** — `.sh`, `.bash`, `.zsh`, `.ps1`
+- [x] **SQL** — `.sql` with migration folder detection
+- [x] **Docker** — `Dockerfile`, `docker-compose` as a pseudo-language
 
 ## Output Improvements
 
 - [ ] **README generation** — auto-generate a README alongside or instead of REPO_NOTES.md
-- [ ] **Summary badges** at the top — total files, lines, languages, security issues
-- [ ] **Syntax-highlighted code blocks** — correct language identifiers in markdown fences
-- [ ] **Collapsible sections** — `<details>` tags for large output
+- [x] **Summary badges** at the top — total files, lines, languages, security issues
+- [x] **Syntax-highlighted code blocks** — correct language identifiers in markdown fences
+- [x] **Collapsible sections** — `<details>` tags for large output
 - [ ] **HTML output** option for a pretty web view
-- [ ] **Section ordering** — user-configurable section order via `.repo-notes.yaml`
+- [x] **Section ordering** — user-configurable section order via `.repo-notes.yaml`
 
 ## Performance
 
