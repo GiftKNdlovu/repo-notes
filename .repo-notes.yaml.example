@@ -1,0 +1,36 @@
+# repo-notes configuration
+# Place this file as .repo-notes.yaml in your project root
+
+# Additional exclusion patterns (beyond .gitignore)
+exclude_patterns:
+  - "*.log"
+  - "*.bak"
+  - "dist/"
+  - "build/"
+
+# Include hidden files (dotfiles)
+include_hidden: false
+
+# Language detectors
+detectors:
+  enabled:
+    - all  # or list specific: ["python", "javascript", "go", "rust"]
+
+# Content extractors
+extractors:
+  structure: true
+  key_files: true
+  stats: true
+  dependencies: true
+  git: true
+  architecture: true
+  security: true
+
+# Structure tree settings
+structure:
+  max_depth: 3          # Max directory nesting
+  show_hidden: false     # Show hidden files in tree
+
+# Security scanning
+security:
+  entropy_threshold: 4.5  # Shannon entropy (lower = more sensitive)
