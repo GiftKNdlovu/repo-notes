@@ -33,7 +33,7 @@ htmlcov/
 .DS_Store
 
 # Project specific
-REPO_NOTES.md
+# REPO_NOTES.md
 
 # OS
 Thumbs.db
