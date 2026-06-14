@@ -5,6 +5,7 @@ from pathlib import Path
 import re
 import math
 from repo_notes.scanner import FileInfo
+from repo_notes.file_cache import read_text
 
 
 SECRET_PATTERNS = [
@@ -86,11 +87,7 @@ class SecurityExtractor:
         )
 
     def _read_content(self, path: Path) -> str:
-        try:
-            with path.open("r", encoding="utf-8", errors="ignore") as f:
-                return f.read()
-        except OSError:
-            return ""
+        return read_text(path)
 
     def _get_line_number(self, content: str, pos: int) -> int:
         return content[:pos].count("\n") + 1

@@ -7,6 +7,7 @@ from .dependencies import DependenciesExtractor, DependenciesResult
 from .git import GitExtractor, GitResult
 from .architecture import ArchitectureExtractor, ArchitectureResult
 from .security import SecurityExtractor, SecurityResult
+from .readme_data import ReadmeDataExtractor, ReadmeData
 
 __all__ = [
     "StructureExtractor",
@@ -23,4 +24,6 @@ __all__ = [
     "ArchitectureResult",
     "SecurityExtractor",
     "SecurityResult",
+    "ReadmeDataExtractor",
+    "ReadmeData",
 ]

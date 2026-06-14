@@ -32,8 +32,10 @@ htmlcov/
 *~
 .DS_Store
 
-# Project specific
-# REPO_NOTES.md
+# Project specific (generated files)
+REPO_NOTES.md
+REPO_NOTES.html
+rnREADME.md
 
 # OS
 Thumbs.db

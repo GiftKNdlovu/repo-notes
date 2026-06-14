@@ -6,6 +6,7 @@ from collections import defaultdict
 import re
 from repo_notes.scanner import FileInfo
 from repo_notes.detectors import get_registry
+from repo_notes.file_cache import read_text
 
 
 LAYER_PATTERNS = {
@@ -115,8 +116,4 @@ class ArchitectureExtractor:
         return imports
 
     def _read_content(self, path: Path) -> str:
-        try:
-            with path.open("r", encoding="utf-8", errors="ignore") as f:
-                return f.read()
-        except OSError:
-            return ""
+        return read_text(path)
