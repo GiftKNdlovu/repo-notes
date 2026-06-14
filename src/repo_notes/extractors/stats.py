@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from repo_notes.scanner import FileInfo
 from repo_notes.detectors import get_registry
+from repo_notes.file_cache import read_text
 
 
 @dataclass(slots=True)
@@ -55,8 +56,5 @@ class StatsExtractor:
         )
 
     def _count_lines(self, path: Path) -> int:
-        try:
-            with path.open("r", encoding="utf-8", errors="ignore") as f:
-                return sum(1 for _ in f)
-        except OSError:
-            return 0
+        content = read_text(path)
+        return len(content.splitlines()) if content else 0

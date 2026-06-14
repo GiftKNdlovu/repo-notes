@@ -17,19 +17,19 @@ Planned features for `repo-notes`, organized by category.
 
 ## Output Improvements
 
-- [ ] **README generation** — auto-generate a README alongside or instead of REPO_NOTES.md
+- [x] **README generation** — auto-generate a README alongside or instead of REPO_NOTES.md
 - [x] **Summary badges** at the top — total files, lines, languages, security issues
 - [x] **Syntax-highlighted code blocks** — correct language identifiers in markdown fences
 - [x] **Collapsible sections** — `<details>` tags for large output
-- [ ] **HTML output** option for a pretty web view
+- [x] **HTML output** option for a pretty web view
 - [x] **Section ordering** — user-configurable section order via `.repo-notes.yaml`
 
 ## Performance
 
-- [ ] **Parallel file scanning** — `concurrent.futures` for git and security extractors
-- [ ] **File content caching** — share file reads across extractors instead of re-reading
+- [x] **Parallel file scanning** — `concurrent.futures` for all extractors
+- [x] **File content caching** — share file reads across extractors via `@lru_cache`
 - [ ] **Incremental updates** — only re-scan changed files using content hashes
-- [ ] **Streaming output** — write progressively for very large repos
+- [x] **Streaming output** — write progressively to file via `write_to()` methods
 
 ## New Extractors
 
@@ -66,7 +66,7 @@ Planned features for `repo-notes`, organized by category.
 - [ ] **`--init`** — generate a `.repo-notes.yaml` template in the project
 - [ ] **`--json` output** — machine-readable for editor plugins
 - [ ] **Auto-detect git root** — scan repo root even from a subdirectory
-- [ ] **`--quiet` / `-q`** — suppress progress bars (CI-friendly)
+- [x] **`--quiet` / `-q`** — suppress progress bars (CI-friendly)
 - [ ] **Tab-completion** — shell completion scripts (click built-in)
 
 ## Config Refinements
@@ -76,13 +76,13 @@ Planned features for `repo-notes`, organized by category.
 - [ ] **Custom layer patterns** — user-defined path patterns for architecture layer detection
 - [ ] **Per-path extractor exclusion** — skip specific extractors on vendored/generated code
 - [ ] **Config profiles** — presets like `release`, `ci`, `quick`
-- [ ] **Thresholds** — min file size, max lines for stats inclusion, etc.
+- [x] **Thresholds** — `min_file_size` config option
 
 ## Testing & Quality
 
 - [ ] **Coverage target** — minimum coverage threshold in CI
 - [ ] **Property-based tests** — via `hypothesis` for extractors
-- [ ] **Benchmark suite** — measure scan time on known repos
+- [x] **Benchmark suite** — `benchmarks/benchmark.py` measures scan time on synthetic repos
 - [ ] **Snapshot tests** — golden file tests for markdown output
 
 ---

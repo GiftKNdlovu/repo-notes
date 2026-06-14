@@ -145,7 +145,7 @@ def test_badges_show_stats():
     assert "**1** languages" in md
 
 
-def test_badges_show_security():
+def test_badges_show_security_high():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(
         security=SecurityResult(
@@ -154,7 +154,20 @@ def test_badges_show_security():
         ),
         stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
     )
-    assert "**1** security issue" in md
+    assert "**1** high" in md
+
+
+def test_badges_show_security_mild():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        security=SecurityResult(
+            findings=[],
+            high_entropy_strings=[{"file": "x.py", "entropy": 4.5, "line": 1, "preview": "abc"}],
+            env_files=[],
+        ),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+    )
+    assert "**1** mild" in md
 
 
 def test_badges_show_git():
@@ -198,7 +211,7 @@ def test_stats_table_collapsed():
     assert "<summary>Largest Files" in md
 
 
-def test_security_findings_collapsed():
+def test_security_findings_open():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(
         security=SecurityResult(
@@ -206,8 +219,22 @@ def test_security_findings_collapsed():
             env_files=[],
         )
     )
-    assert "<details>" in md
+    assert "<details open>" in md
     assert "<summary>Potential Secrets" in md
+
+
+def test_security_high_entropy_collapsed():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        security=SecurityResult(
+            findings=[],
+            high_entropy_strings=[{"file": "x.py", "entropy": 4.5, "line": 1, "preview": "abcdef123456"}],
+            env_files=[],
+        )
+    )
+    assert "<details>" in md
+    assert "<summary>High Entropy Strings" in md
+    assert "<details open>" not in md
 
 
 def test_structure_not_collapsed():

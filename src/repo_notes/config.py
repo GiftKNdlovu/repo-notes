@@ -34,6 +34,7 @@ class StructureConfig:
 
 @dataclass
 class OutputConfig:
+    format: str = "notes"
     order: list[str] = field(default_factory=lambda: [
         "structure",
         "key_files",
@@ -49,6 +50,7 @@ class OutputConfig:
 class Config:
     exclude_patterns: list[str] = field(default_factory=list)
     include_hidden: bool = False
+    min_file_size: int = 0
     detectors: DetectorConfig = field(default_factory=DetectorConfig)
     extractors: ExtractorConfig = field(default_factory=ExtractorConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
@@ -107,6 +109,7 @@ class Config:
         return {
             "exclude_patterns": self.exclude_patterns,
             "include_hidden": self.include_hidden,
+            "min_file_size": self.min_file_size,
             "detectors": {
                 "enabled": self.detectors.enabled,
             },
@@ -128,6 +131,7 @@ class Config:
                 "show_hidden": self.structure.show_hidden,
             },
             "output": {
+                "format": self.output.format,
                 "order": self.output.order,
             },
         }

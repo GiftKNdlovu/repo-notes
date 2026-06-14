@@ -1,5 +1,7 @@
 """CLI interface for repo-notes."""
 
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import click
 from rich.console import Console
@@ -15,8 +17,11 @@ from repo_notes.extractors import (
     GitExtractor,
     ArchitectureExtractor,
     SecurityExtractor,
+    ReadmeDataExtractor,
 )
 from repo_notes.generator import MarkdownGenerator
+from repo_notes.readme_generator import ReadmeGenerator
+from repo_notes.html_generator import HtmlGenerator
 
 console = Console()
 
@@ -50,10 +55,36 @@ console = Console()
     default=None,
     help="Include hidden files and directories",
 )
-def cli(path, config, output, max_depth, include_hidden):
-    """Scan REPO_PATH and generate REPO_NOTES.md with project notes.
+@click.option(
+    "--format",
+    type=click.Choice(["notes", "readme", "both", "html"]),
+    default=None,
+    help="Output format (default: notes)",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    default=False,
+    help="Overwrite existing README.md (only with --replace-readme)",
+)
+@click.option(
+    "--quiet", "-q",
+    is_flag=True,
+    default=False,
+    help="Suppress progress output",
+)
+@click.option(
+    "--replace-readme",
+    is_flag=True,
+    default=False,
+    help="Write to README.md instead of rnREADME.md",
+)
+def cli(path, config, output, max_depth, include_hidden, format, force, quiet, replace_readme):
+    """Scan REPO_PATH and generate project notes.
 
-    By default, scans the current directory.
+    By default, generates REPO_NOTES.md with detailed technical notes.
+    Use --format readme to generate a rnREADME.md instead (safe for existing READMEs).
+    Use --format readme --replace-readme to write to README.md directly.
     """
     root = path.resolve()
     cfg = Config.load(root=root, path=config)
@@ -64,19 +95,28 @@ def cli(path, config, output, max_depth, include_hidden):
         overrides["structure"] = {"max_depth": max_depth}
     if include_hidden is not None:
         overrides["include_hidden"] = include_hidden
+    if format is not None:
+        overrides["output"] = {"format": format}
     if overrides:
         cfg = cfg.merge_cli(**overrides)
 
-    if output is None:
-        output = root / "REPO_NOTES.md"
-
     console.print(f"[bold]repo-notes[/bold] scanning [cyan]{root}[/cyan]...")
+
+    notes_output = output or root / "REPO_NOTES.md"
+    readme_name = "README.md" if replace_readme else "rnREADME.md"
+    readme_output = root / readme_name
+
+    if replace_readme and cfg.output.format in ("readme", "both") and readme_output.exists() and not force:
+        console.print("[yellow]README.md already exists. Use --force to overwrite.[/yellow]")
+        return
+
+    progress_console = Console(file=open(os.devnull, "w")) if quiet else console
 
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
-        console=console,
+        console=progress_console,
     ) as progress:
         # Scan files
         task = progress.add_task("Scanning files...", total=None)
@@ -84,6 +124,7 @@ def cli(path, config, output, max_depth, include_hidden):
             root,
             include_hidden=cfg.include_hidden,
             extra_excludes=cfg.exclude_patterns,
+            min_file_size=cfg.min_file_size,
         ))
         progress.update(task, completed=True)
 
@@ -91,62 +132,79 @@ def cli(path, config, output, max_depth, include_hidden):
             console.print("[yellow]No files found to scan.[/yellow]")
             return
 
-        # Run extractors
+        # Run extractors in parallel
         results = {}
+        extractors: list[tuple[str, object, object]] = []
 
         if cfg.extractors.structure:
-            task = progress.add_task("Building structure tree...", total=None)
-            extractor = StructureExtractor(
-                max_depth=cfg.structure.max_depth,
-            )
-            results["structure"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
-
+            extractors.append(("structure", StructureExtractor(max_depth=cfg.structure.max_depth), files))
         if cfg.extractors.key_files:
-            task = progress.add_task("Finding key files...", total=None)
-            extractor = KeyFilesExtractor()
-            results["key_files"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
-
+            extractors.append(("key_files", KeyFilesExtractor(), files))
         if cfg.extractors.stats:
-            task = progress.add_task("Computing statistics...", total=None)
-            extractor = StatsExtractor()
-            results["stats"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
-
+            extractors.append(("stats", StatsExtractor(), files))
         if cfg.extractors.dependencies:
-            task = progress.add_task("Parsing dependencies...", total=None)
-            extractor = DependenciesExtractor()
-            results["deps"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
-
+            extractors.append(("deps", DependenciesExtractor(), files))
         if cfg.extractors.git:
-            task = progress.add_task("Gathering git info...", total=None)
-            extractor = GitExtractor()
-            results["git"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
-
+            extractors.append(("git", GitExtractor(), files))
         if cfg.extractors.architecture:
-            task = progress.add_task("Analyzing architecture...", total=None)
-            extractor = ArchitectureExtractor()
-            results["arch"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
-
+            extractors.append(("arch", ArchitectureExtractor(), files))
         if cfg.extractors.security:
-            task = progress.add_task("Scanning for secrets...", total=None)
-            extractor = SecurityExtractor(
-                entropy_threshold=cfg.security.entropy_threshold,
-            )
-            results["security"] = extractor.extract(root, files)
-            progress.update(task, completed=True)
+            extractors.append(("security", SecurityExtractor(entropy_threshold=cfg.security.entropy_threshold), files))
+        # README data always extracted
+        extractors.append(("readme", ReadmeDataExtractor(), files))
 
-    # Generate markdown
-    generator = MarkdownGenerator(root)
-    markdown = generator.generate(**results, section_order=cfg.output.order)
+        task = progress.add_task("Running extractors...", total=None)
+        readme_data = None
+        errors: list[str] = []
+        with ThreadPoolExecutor(max_workers=min(8, (os.cpu_count() or 1) * 2)) as pool:
+            futures = {pool.submit(ext.extract, root, fls): name for name, ext, fls in extractors}
+            for future in as_completed(futures):
+                name = futures[future]
+                try:
+                    result = future.result()
+                    if name == "readme":
+                        readme_data = result
+                    else:
+                        results[name] = result
+                except Exception as exc:
+                    errors.append(f"{name}: {exc}")
+        progress.update(task, completed=True)
 
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(markdown, encoding="utf-8")
+        if errors:
+            for err in errors:
+                console.print(f"[yellow]Warning: extractor failed — {err}[/yellow]")
 
-    console.print(f"[green]Done![/green] Notes written to [bold]{output}[/bold]")
-    console.print(f"  - {len(files)} files scanned")
-    console.print(f"  - {len(markdown)} characters")
+    # Generate outputs
+    if cfg.output.format in ("notes", "both"):
+        generator = MarkdownGenerator(root)
+        notes_output.parent.mkdir(parents=True, exist_ok=True)
+        generator.write_to(notes_output, **results, section_order=cfg.output.order)
+
+        size = notes_output.stat().st_size
+        console.print(f"[green]Done![/green] Notes written to [bold]{notes_output}[/bold]")
+        console.print(f"  - {len(files)} files scanned")
+        console.print(f"  - {size:,} bytes")
+
+    if cfg.output.format in ("readme", "both"):
+        readme_gen = ReadmeGenerator(root)
+        readme_md = readme_gen.generate(
+            readme_data=readme_data,
+            stats=results.get("stats"),
+        )
+
+        readme_output.parent.mkdir(parents=True, exist_ok=True)
+        readme_output.write_text(readme_md, encoding="utf-8")
+
+        name = "README" if replace_readme else "rnREADME"
+        console.print(f"[green]Done![/green] {name} written to [bold]{readme_output}[/bold]")
+
+    if cfg.output.format == "html":
+        html_gen = HtmlGenerator(root)
+        html_output = output or root / "REPO_NOTES.html"
+        html_output.parent.mkdir(parents=True, exist_ok=True)
+        html_gen.write_to(html_output, **results, section_order=cfg.output.order)
+
+        size = html_output.stat().st_size
+        console.print(f"[green]Done![/green] HTML notes written to [bold]{html_output}[/bold]")
+        console.print(f"  - {len(files)} files scanned")
+        console.print(f"  - {size:,} bytes")

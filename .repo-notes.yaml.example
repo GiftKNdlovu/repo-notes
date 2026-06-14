@@ -37,6 +37,7 @@ security:
 
 # Output settings
 output:
+  format: notes  # notes, readme, or both
   order:
     - structure
     - key_files
