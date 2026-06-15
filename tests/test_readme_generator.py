@@ -1,11 +1,12 @@
 """Tests for README generation."""
 
-from pathlib import Path
-import tempfile
 import subprocess
-from repo_notes.readme_generator import ReadmeGenerator
+import tempfile
+from pathlib import Path
+
 from repo_notes.extractors.readme_data import ReadmeData, ReadmeDataExtractor
 from repo_notes.extractors.stats import StatsResult
+from repo_notes.readme_generator import ReadmeGenerator
 from repo_notes.scanner import FileInfo
 
 

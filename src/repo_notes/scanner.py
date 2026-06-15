@@ -1,12 +1,12 @@
 """File scanner with .gitignore support."""
 
 import os
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
-import pathspec
 
+import pathspec
 
 DEFAULT_IGNORE = [
     "__pycache__/",

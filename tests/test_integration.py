@@ -1,8 +1,8 @@
 """Integration tests for repo-notes."""
 
-from pathlib import Path
-import tempfile
 import subprocess
+import tempfile
+from pathlib import Path
 
 
 def test_cli_scans_directory():

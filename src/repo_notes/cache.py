@@ -8,7 +8,6 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
 
 from repo_notes.config import Config
 from repo_notes.scanner import FileInfo, scan_directory
@@ -45,7 +44,7 @@ def _config_hash(cfg: Config) -> str:
         h.update(name.encode())
     ext = cfg.extractors
     h.update("".join([
-        str(ext.structure), str(ext.key_files), str(ext.stats),
+        str(ext.structure), str(ext.project_intelligence), str(ext.stats),
         str(ext.dependencies), str(ext.git), str(ext.architecture),
         str(ext.security),
     ]).encode())
@@ -61,7 +60,7 @@ class CacheManager:
         self.root = root.resolve()
         self.cache_path = self.root / CACHE_FILENAME
         self.cfg = cfg
-        self._data: Optional[dict] = None
+        self._data: dict | None = None
 
     def load(self) -> dict:
         if self._data is not None:
@@ -75,7 +74,7 @@ class CacheManager:
             self._data = {}
         return self._data
 
-    def save(self, file_states: Dict[str, FileState]) -> None:
+    def save(self, file_states: dict[str, FileState]) -> None:
         data = {
             "version": CACHE_VERSION,
             "config_hash": _config_hash(self.cfg),
@@ -103,8 +102,8 @@ class CacheManager:
             return False
         return True
 
-    def compute_current_states(self) -> Dict[str, FileState]:
-        states: Dict[str, FileState] = {}
+    def compute_current_states(self) -> dict[str, FileState]:
+        states: dict[str, FileState] = {}
         for fi in scan_directory(
             self.root,
             include_hidden=self.cfg.include_hidden,
@@ -123,7 +122,7 @@ class CacheManager:
                 continue
         return states
 
-    def has_changes(self, current: Dict[str, FileState]) -> bool:
+    def has_changes(self, current: dict[str, FileState]) -> bool:
         cached = self.load().get("files", {})
         if set(current.keys()) != set(cached.keys()):
             return True
@@ -136,7 +135,7 @@ class CacheManager:
         return False
 
     def save_from_file_infos(self, files: list[FileInfo]) -> None:
-        states: Dict[str, FileState] = {}
+        states: dict[str, FileState] = {}
         for fi in files:
             key = fi.relative_path.as_posix()
             try:

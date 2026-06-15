@@ -1,13 +1,25 @@
 """Tests for the markdown generator."""
 
 from pathlib import Path
+
+from repo_notes.extractors import (
+    ApiEndpointResult,
+    ArchitectureResult,
+    CicdResult,
+    ComplexityResult,
+    DatabaseResult,
+    DependenciesResult,
+    DuplicateResult,
+    EnvVarsResult,
+    GitResult,
+    ScriptsResult,
+    SecurityResult,
+    StatsResult,
+    StructureResult,
+    TodosResult,
+    TypeCoverageResult,
+)
 from repo_notes.generator import MarkdownGenerator
-from repo_notes.extractors.structure import StructureResult
-from repo_notes.extractors.stats import StatsResult
-from repo_notes.extractors.git import GitResult
-from repo_notes.extractors.architecture import ArchitectureResult
-from repo_notes.extractors.security import SecurityResult
-from repo_notes.extractors.dependencies import DependenciesResult
 
 
 def test_generates_title():
@@ -81,11 +93,15 @@ def test_includes_architecture():
         arch=ArchitectureResult(
             layers={"models": [Path("user.py"), Path("post.py")]},
             entry_points=[Path("main.py")],
+            import_graph={"user.py": ["models", "utils"], "main.py": ["user"]},
         )
     )
     assert "## Architecture Overview" in md
     assert "Models" in md
     assert "main.py" in md
+    assert "Import Graph" in md
+    assert "user.py" in md
+    assert "models" in md
 
 
 def test_includes_security():
@@ -125,6 +141,159 @@ def test_omits_empty_sections():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate()
     assert "## " not in md
+
+
+def test_includes_todos():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        todos=TodosResult(
+            items=[
+                {"tag": "FIXME", "file": "main.py", "line": 10, "message": "fix this"},
+                {"tag": "TODO", "file": "utils.py", "line": 5, "message": "add docstring"},
+            ],
+            count_by_tag={"FIXME": 1, "TODO": 1},
+        )
+    )
+    assert "TODO / FIXME / HACK" in md
+    assert "FIXME" in md
+    assert "main.py" in md
+    assert "fix this" in md
+
+
+def test_includes_scripts():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        scripts=ScriptsResult(
+            package_json={"test": "vitest run", "build": "vite build"},
+            makefile_targets=["clean", "all"],
+            justfile_recipes=["lint", "fmt"],
+            pyproject_scripts={"dev": "uvicorn app:main"},
+        )
+    )
+    assert "Build Scripts" in md
+    assert "vitest run" in md
+    assert "clean" in md
+    assert "lint" in md
+    assert "uvicorn" in md
+
+
+def test_includes_env_vars():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        env_vars=EnvVarsResult(
+            variables={"DATABASE_URL": ["config.py", ".env.example"], "API_KEY": ["config.py"]}
+        )
+    )
+    assert "Environment Variables" in md
+    assert "DATABASE_URL" in md
+    assert "API_KEY" in md
+    assert "config.py" in md
+
+
+def test_includes_cicd():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        cicd=CicdResult(
+            github_actions=[{"name": "CI", "on": ["push", "pull_request"], "jobs": ["test", "lint"]}],
+            gitlab_ci=[{"name": "build", "stage": "build", "image": "python:3.12"}],
+            circleci=[{"name": "test", "steps": 3}],
+            jenkins_stages=["Build", "Test"],
+        )
+    )
+    assert "CI/CD Configuration" in md
+    assert "GitHub Actions" in md
+    assert "CI" in md
+    assert "push" in md
+    assert "GitLab CI" in md
+    assert "CircleCI" in md
+    assert "Jenkins" in md
+
+
+def test_includes_database():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        database=DatabaseResult(
+            migration_files=[Path("migrations/001_init.py")],
+            model_files=[Path("models/user.py"), Path("models/post.py")],
+            model_count=2,
+            schema_files=[Path("schema.sql")],
+            orm_types=["SQLAlchemy"],
+        )
+    )
+    assert "Database Schema" in md
+    assert "Migration Files" in md
+    assert "001_init" in md
+    assert "models/user.py" in md
+    assert "schema.sql" in md
+    assert "SQLAlchemy" in md
+
+
+def test_includes_type_coverage():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        type_coverage=TypeCoverageResult(
+            typed_files=5,
+            untyped_files=3,
+            typed_lines=200,
+            untyped_lines=100,
+            by_extension={".py": {"files": 8, "typed_lines": 200, "untyped_lines": 100}},
+        )
+    )
+    assert "Type Coverage" in md
+    assert "62.5%" in md  # 5/8 * 100
+    assert "5 typed files" in md
+    assert "200" in md
+    assert ".py" in md
+
+
+def test_includes_complexity():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        complexity=ComplexityResult(
+            complex_files=[{"file": "main.py", "long_functions": ["foo", "bar"], "max_nesting": 5, "score": 50}],
+            avg_function_length=15.5,
+            max_nesting=5,
+        )
+    )
+    assert "Code Complexity" in md
+    assert "Average function length" in md
+    assert "15.5" in md
+    assert "Complex Files" in md
+    assert "main.py" in md
+
+
+def test_includes_duplicates():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        duplicates=DuplicateResult(
+            duplicates=[{"file": "copy.py", "duplicate_of": "original.py", "size": 100, "similarity": 0.95}],
+            total_duplicates=1,
+            total_saved_bytes=80,
+        )
+    )
+    assert "Duplicate Files" in md
+    assert "found" in md
+    assert "80.0" in md
+    assert "copy.py" in md
+    assert "original.py" in md
+    assert "95%" in md
+
+
+def test_includes_api_endpoints():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        api_endpoints=ApiEndpointResult(
+            endpoints=[
+                {"framework": "FastAPI", "method": "GET", "path": "/items", "file": "main.py", "line": 10},
+                {"framework": "Flask", "method": "POST", "path": "/users", "file": "app.py", "line": 5},
+            ]
+        )
+    )
+    assert "API Endpoints" in md
+    assert "FastAPI" in md
+    assert "Flask" in md
+    assert "/items" in md
+    assert "/users" in md
 
 
 # Badge tests

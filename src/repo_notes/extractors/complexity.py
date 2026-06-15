@@ -3,9 +3,9 @@
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from repo_notes.scanner import FileInfo
-from repo_notes.file_cache import read_text
 
+from repo_notes.file_cache import read_text
+from repo_notes.scanner import FileInfo
 
 COMPLEXITY_THRESHOLD = 10  # minimum function length to flag
 MAX_NESTING_WARN = 4       # nesting depth beyond this is flagged
@@ -59,7 +59,6 @@ class ComplexityExtractor:
 
     def _function_lengths(self, content: str) -> list[int]:
         lines = content.split("\n")
-        fn_starts = []
         in_fn = False
         fn_start = 0
         brace_depth = 0
@@ -89,7 +88,7 @@ class ComplexityExtractor:
         if in_fn:
             lengths.append(len(lines) - fn_start)
 
-        return [l for l in lengths if l > 1]
+        return [ln for ln in lengths if ln > 1]
 
     def _max_nesting(self, content: str) -> int:
         max_depth = 0

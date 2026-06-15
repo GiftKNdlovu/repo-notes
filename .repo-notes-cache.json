@@ -3,9 +3,9 @@
   "config_hash": "9969865d8f6acca7e9da6bb9949a4faa488641200866afaed7af51846b618da3",
   "files": {
     "README.md": {
-      "mtime": 1781552109121002095,
-      "size": 10270,
-      "hash": "d2418194f36a6d0de94d04cef2111e7d8c406d35e14fa905b56279e97941c4dc"
+      "mtime": 1781560327382612264,
+      "size": 11888,
+      "hash": "3f0854cfa42f90cbbe514e679b1991737292ec612ba69c7a3fdaa4b44d6655c4"
     },
     "ROADMAP.md": {
       "mtime": 1781552507337396323,
@@ -18,194 +18,189 @@
       "hash": "97d78cbebc4727083303a5b8be6bbb7ca57528daa4c05c2e54f8bd8854c21aec"
     },
     "pyproject.toml": {
-      "mtime": 1781299505776118817,
+      "mtime": 1781560092802927800,
       "size": 538,
-      "hash": "19424c05b0766d88eeb45fca28f7b3a1df4cb4c0b3512f6edf5d5c27da782ee6"
+      "hash": "586e97669100920c45f0a70d4486a9a1eb6b5cf0532f0d812022608f5f7800d9"
     },
     "src/repo_notes/__init__.py": {
-      "mtime": 1781299512280176086,
-      "size": 98,
-      "hash": "58ddeb19a914284d79da2c35ec7e03d3965921b15c9bc12cf1956b442038aff4"
+      "mtime": 1781560354894632349,
+      "size": 99,
+      "hash": "56fb51476dc429b5bba6baa6ec833035e3c6ff1964e7b35b1343c8c1334b6510"
     },
     "src/repo_notes/__main__.py": {
-      "mtime": 1781301492672120552,
-      "size": 129,
-      "hash": "7697bcff962f1065a009c5ff724a939f4d013664b660471d37ef641b7ebc4616"
+      "mtime": 1781560354921631416,
+      "size": 130,
+      "hash": "24a9f40036a04cbb1fc41ec0beb3c64d8554d1c61c156627a9781e9019d34d1d"
     },
     "src/repo_notes/cache.py": {
-      "mtime": 1781549813896771089,
-      "size": 4975,
-      "hash": "ff57886f6ab4d07783aeb9fa3fe1d4122eae3e4c1bbee8db6c4beeba4c2f5f66"
+      "mtime": 1781560354931631071,
+      "size": 4949,
+      "hash": "054f21bbbcbedd750c8bb1eb8de4b83e36d6fdbd653b6602f63b218dc73dd848"
     },
     "src/repo_notes/cli.py": {
-      "mtime": 1781556505438366258,
-      "size": 12913,
-      "hash": "2b2b60c92b30ce419ff00a2edeb6ba0484edc81154f593ba7e35d3dd49bc2e39"
+      "mtime": 1781560900897110386,
+      "size": 12896,
+      "hash": "d7cdfecf978286d8480eac8bfc82e0ce14c4dd052da2188dfa798da5a5d801f8"
     },
     "src/repo_notes/config.py": {
-      "mtime": 1781556497844156230,
-      "size": 5337,
-      "hash": "c34842c3b0dc70c5a6f4afd3ce07117c7b5f3e070f715c634cafe3ad88d3fdb6"
+      "mtime": 1781560887017231602,
+      "size": 5323,
+      "hash": "71bca85f21b9a306a3c0b9fdb2fc33ec590920a1ff31dfd3f442c20cb4125815"
     },
     "src/repo_notes/detectors/__init__.py": {
-      "mtime": 1781299571764699346,
-      "size": 220,
-      "hash": "52e4939339e62ad2f7bc53d218a9f588a79502d705f267919170e67371e79961"
+      "mtime": 1781560354949630449,
+      "size": 221,
+      "hash": "b3568ba4d7eec19df5a94121144fc501499c8635c3aac7ab4f4e9f6d3ef6f358"
     },
     "src/repo_notes/detectors/base.py": {
-      "mtime": 1781299594406898292,
-      "size": 1130,
-      "hash": "fb0abaa68ec32ab234206af78aaf395a15fc77d165e873ea877aa4d376741c88"
+      "mtime": 1781560354950630414,
+      "size": 1131,
+      "hash": "099f615dbe7bc36ef827bb04083464653f7c0ace9f7014a8b9026af8e7bd91cc"
     },
     "src/repo_notes/detectors/go.py": {
-      "mtime": 1781299684603689688,
+      "mtime": 1781560354950630414,
       "size": 293,
-      "hash": "661e7797b854ea3a883e052620958ec0f93b12d0213b2f84a4b7f0504fddb32c"
+      "hash": "d389a0aff98442c7a1713e3ebb1c4a6ceb63e2062bbea30c640e82d802dcf75a"
     },
     "src/repo_notes/detectors/javascript.py": {
-      "mtime": 1781299666445530501,
+      "mtime": 1781560354951630379,
       "size": 576,
-      "hash": "d615f4deec77feaa73c8208a53759645ffc9a7245dde3dd0d946ba1e4c47753b"
+      "hash": "45b7e0b65d31e8aea3e776151cd7884a68674555e3a48a693c8541a7789d961a"
     },
     "src/repo_notes/detectors/python.py": {
-      "mtime": 1781299658265458768,
+      "mtime": 1781560354952630345,
       "size": 339,
-      "hash": "b60f1a7af0ce3651c47bf3cdbe89d46e73a318ac6fbe1377b11d4ec75b42c8d8"
+      "hash": "41644ffd8aaa01cb568e559c5259fc92f476a878d1af6989ae893ff23f5e338d"
     },
     "src/repo_notes/detectors/registry.py": {
-      "mtime": 1781299651474399205,
-      "size": 2124,
-      "hash": "55de7dec7ae4e08b6de2aca7d283cff5c6c390690922ff96f520caf967c7dc77"
+      "mtime": 1781560354960630068,
+      "size": 2126,
+      "hash": "3a5d096ec2e75c1957b9ede28d26ce9ec372a9754efa405fa102977e8f6bfd70"
     },
     "src/repo_notes/detectors/rust.py": {
-      "mtime": 1781301644771801235,
+      "mtime": 1781560354961630034,
       "size": 287,
-      "hash": "74e5a4e32a9ddf918609888da026ac0c61a422683734ffc39bfbdd15bc79b13f"
+      "hash": "21f2ef80b233f4637fd8cabe1fe505ebfdb803ec2612ab863b73644b9e8d4d01"
     },
     "src/repo_notes/extractors/__init__.py": {
-      "mtime": 1781556474098489249,
-      "size": 1966,
-      "hash": "88f1d0370dc15728e26fe2bf54dcca507be796281170843adb25cec1b0fedbd1"
+      "mtime": 1781560354963629965,
+      "size": 1863,
+      "hash": "801eaa5e4f1ad356b698ff0359a2ca33e6fa3299be791bc2dc3d0080dfc42bd9"
     },
     "src/repo_notes/extractors/api_endpoints.py": {
-      "mtime": 1781552370652456828,
+      "mtime": 1781560354968629792,
       "size": 4743,
-      "hash": "d2735e621c2f97729eb0576f9b17221b08f97b07b32e87f1841c719b6ec5a90e"
+      "hash": "98cb23caa44f54e8d2751c5679fb9dc0c549f2be85cd782c9b835a40f081d24c"
     },
     "src/repo_notes/extractors/architecture.py": {
-      "mtime": 1781463138461307292,
-      "size": 4792,
-      "hash": "28b6b9fd96863ef35af39a023f1865730bc4609d4d7c8876f00782b7ad0081f6"
+      "mtime": 1781560354971629688,
+      "size": 4793,
+      "hash": "a2948d951fb88fcdfa0467f8ce82e55612eafc8b185c4f24c039db94b1ddb7de"
     },
     "src/repo_notes/extractors/cicd.py": {
-      "mtime": 1781551757412032991,
-      "size": 3448,
-      "hash": "d9e01c1fa7adfed7db2926e84a526b2c4965c828aad1c8eedf4628dac956d208"
+      "mtime": 1781560354977629481,
+      "size": 3440,
+      "hash": "335e634a297bc0cebba090119f325ac3070bad1304482d43b96a56593959b15f"
     },
     "src/repo_notes/extractors/complexity.py": {
-      "mtime": 1781551788648377541,
-      "size": 3728,
-      "hash": "f4d977abc2ba8523818d28e0e02b143fd76cebe66a9f2d7752fb93d9e089698d"
+      "mtime": 1781560391636414588,
+      "size": 3708,
+      "hash": "c06e29adfefc8e4f321a1747bd812612d8737aee20b824521bf4c6c369b81781"
     },
     "src/repo_notes/extractors/database.py": {
-      "mtime": 1781552051974764557,
+      "mtime": 1781560354986629170,
       "size": 2294,
-      "hash": "d5f8af2930102d0f73ad3db1deb58faf343d8833ed5154fccfeecc46f10b99cd"
+      "hash": "847508598825e8b07fe97e8cb5596f2d127bdce099b81cc613817bc051a44c32"
     },
     "src/repo_notes/extractors/dependencies.py": {
-      "mtime": 1781301695032352203,
-      "size": 4303,
-      "hash": "03eaa9369a7a2b1d8c9e8d6b8eb61d49e4bd3e7688b9b23e197bf0b7ecc04acd"
+      "mtime": 1781560354996628824,
+      "size": 4305,
+      "hash": "ad02c7e6189d1c1842b4cd03ca6b3ea8e1228a5ce61bb094846f5e852b5c4445"
     },
     "src/repo_notes/extractors/duplicates.py": {
-      "mtime": 1781551812658642070,
-      "size": 2205,
-      "hash": "d26eb3703ccd163a1f43a497b78a9134980b824670434565894f98d91cc0b7bc"
+      "mtime": 1781560355005628513,
+      "size": 2206,
+      "hash": "3d521508a5c0be270123cd9555474941ab15da706f985cd2ececbed5bc2903f1"
     },
     "src/repo_notes/extractors/env_vars.py": {
-      "mtime": 1781548478660270109,
-      "size": 1906,
-      "hash": "e19cb92d7e5cfcd9678ba92a76f0c851f8148518a2feda66098938b099203b35"
+      "mtime": 1781560355012628272,
+      "size": 1907,
+      "hash": "ea2e0cb1437e5a4c15685ab0693a40befbffc8366f583dd6b82592e3ca14b654"
     },
     "src/repo_notes/extractors/git.py": {
-      "mtime": 1781301695033352214,
-      "size": 2452,
-      "hash": "c3597f95b3dc8e2b40569d67507db1d28a9b2eac43721371ccfbc6d9d3b0c52c"
-    },
-    "src/repo_notes/extractors/key_files.py": {
-      "mtime": 1781299821254885777,
-      "size": 1750,
-      "hash": "2894a9739f4957d2739cd71e71ed66c9d3587438f04d0be79fa2bc549b2f4ad1"
+      "mtime": 1781560355014628203,
+      "size": 2453,
+      "hash": "c8584eeb752316da930b81cd6afc8ba013a6729fd270e1a7cea2772cee955374"
     },
     "src/repo_notes/extractors/project_intelligence.py": {
-      "mtime": 1781556705028393855,
-      "size": 29382,
-      "hash": "eab50446988c002a8c6ad88f5c14632e155cfe746be508a39962e8a7a033c48b"
+      "mtime": 1781560445892792315,
+      "size": 29376,
+      "hash": "218d50e2e018445853356ee61c00450b389d408eaa3aa42b318af16b17558c29"
     },
     "src/repo_notes/extractors/readme_data.py": {
-      "mtime": 1781361469422048922,
-      "size": 7295,
-      "hash": "164e52aca3e54546442822fa787040d299ed6caa40cf1f4cd24a3e1f25b3e384"
+      "mtime": 1781560355035627479,
+      "size": 7298,
+      "hash": "c90dce901b1414b6a20ac2a26eb24550717c279a11c436a3fded06bbaf73c2c7"
     },
     "src/repo_notes/extractors/scripts.py": {
-      "mtime": 1781548472115208986,
-      "size": 3111,
-      "hash": "8e39bd1f3cbb4b32ac94e59e88b5f761d60e56b61fef63c3284359b4609c3f99"
+      "mtime": 1781560355042627237,
+      "size": 3112,
+      "hash": "ce9f78bf74f1be5267dca693fb1ff009e9f0f3008e1b768c3cc69b80b16816d6"
     },
     "src/repo_notes/extractors/security.py": {
-      "mtime": 1781551746691914633,
-      "size": 5184,
-      "hash": "86f9c0a6431c8ed2be24252e9e8af9079d72f4661f14ae7950a03be56e4bcda2"
+      "mtime": 1781560355050626962,
+      "size": 5185,
+      "hash": "ebde4e48cb9c9b5c83e5fd5c047047019422f16ece7ed07f2571b96947fbcb3e"
     },
     "src/repo_notes/extractors/stats.py": {
-      "mtime": 1781463123145265538,
-      "size": 1869,
-      "hash": "8ad3396c6c4e832445c529ab18f2789dd86a1d82eeeb1e53faa9a90b3bebdecc"
+      "mtime": 1781560355057626720,
+      "size": 1871,
+      "hash": "dd7b36a7fa7cc19063eee0b91c84d5e39fcf9b9d0ca88e4e940e577a6b805f29"
     },
     "src/repo_notes/extractors/structure.py": {
-      "mtime": 1781301695036352247,
-      "size": 2153,
-      "hash": "a850dc3bd02fae6a731c8930b0933d7e650de41d29e7625b654434c94b9687cd"
+      "mtime": 1781560354898632211,
+      "size": 2155,
+      "hash": "e3c904ba5d07a21da98620a478255b68fa3518f1c71944a10ef295ca9b07f604"
     },
     "src/repo_notes/extractors/todos.py": {
-      "mtime": 1781559100237183966,
+      "mtime": 1781560354901632107,
       "size": 6724,
-      "hash": "ccd4c10abcbcc8fbf2b06d519fa44215bd98db00fd54cc391d1305484feba852"
+      "hash": "bc5b38095a7559d40cf072d891ea479d06193024f9a9b368bcf5199a1728402d"
     },
     "src/repo_notes/extractors/type_coverage.py": {
-      "mtime": 1781551774864225554,
-      "size": 2478,
-      "hash": "c04f4ba2f1cc579d5c85a2e16ca1a4f49de3e9a566252250ac36dac32c61e9e8"
+      "mtime": 1781560354902632073,
+      "size": 2452,
+      "hash": "81172f047f961f9beba838d2d1e08c5b2dd2cb63f1aa305c145832499b317758"
     },
     "src/repo_notes/file_cache.py": {
-      "mtime": 1781463115358244873,
-      "size": 364,
-      "hash": "0716ac6ffe0e6b49861c91c45fd6e2498b47b4b82e606edb563916c0ea7b7f9f"
+      "mtime": 1781560354928631174,
+      "size": 342,
+      "hash": "efb210dcdedb8be06074a767614e53562d2a9f957b8b8d3f10e2fb6563ba9376"
     },
     "src/repo_notes/generator.py": {
-      "mtime": 1781556580677366934,
-      "size": 26764,
-      "hash": "48263917aa70419bb5533ce1ca78818a9cbe848d1832351b97e34b28b6bb2421"
+      "mtime": 1781561163642644777,
+      "size": 29108,
+      "hash": "2b1aa08bcba97e9ee1523056c050c14c883da3b170b5c4e3557e18183f5214d9"
     },
     "src/repo_notes/html_generator.py": {
-      "mtime": 1781556593022682135,
-      "size": 33408,
-      "hash": "47208675476d6638f61d32b9b5547e835105f668f5ec4385f1cb31719d1ad052"
+      "mtime": 1781561171132622183,
+      "size": 33992,
+      "hash": "f6c558ead9aaa6b9309e01b991cdc7456a283997855ddad90092cff58058058d"
     },
     "src/repo_notes/html_templates.py": {
-      "mtime": 1781463202029495433,
-      "size": 13734,
-      "hash": "eb9a7de48e50fed94babdfabb4c942505e34436bd78a0a91f9fe5ca5fbe9deb1"
+      "mtime": 1781560354960630068,
+      "size": 13735,
+      "hash": "b1292362029ea5b3fb897237afc170ddbbc50d5c7579b7341b74846b1e8a4109"
     },
     "src/repo_notes/readme_generator.py": {
-      "mtime": 1781364449998151339,
-      "size": 4805,
-      "hash": "905a31f7f85ef2160b58fcae36b34f5ce67cf206e29a474d7e71f55a400a47ab"
+      "mtime": 1781560354967629826,
+      "size": 4807,
+      "hash": "e413cf9d83085076a358f596425c5769294db3117c127d2a2d04185f491606ea"
     },
     "src/repo_notes/scanner.py": {
-      "mtime": 1781549913402703732,
-      "size": 4769,
-      "hash": "898d7a25f74c3bbb5a36d6b2f3beb9a8c593f0df5e67bd97c1f4bf6ad6555fd5"
+      "mtime": 1781560354974629584,
+      "size": 4779,
+      "hash": "0ac4903102b93c59f4705b965dc84a8ada867439e51c0f17cb7a37d1bfc3f94d"
     },
     "test_results.txt": {
       "mtime": 1781305463633811363,
@@ -218,9 +213,9 @@
       "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "tests/test_api_endpoints_extractor.py": {
-      "mtime": 1781552492051286548,
-      "size": 2977,
-      "hash": "83d58b47bed88411cfbfb0969436fc1b62f8b640193284bce60632dcd084ca9c"
+      "mtime": 1781560354978629446,
+      "size": 2978,
+      "hash": "98e8b81005c9f5938655df866c2c8d4c9077a27af273b28c385065d3d752c550"
     },
     "tests/test_cache.py": {
       "mtime": 1781546020260455083,
@@ -228,84 +223,84 @@
       "hash": "d3962aad631074928085b0a34988f5121f2c34425423bda6156a8fbff8ebbbdb"
     },
     "tests/test_cicd_extractor.py": {
-      "mtime": 1781551963004293038,
-      "size": 2090,
-      "hash": "4b2fb7a4b879dec9615fc60f3af2afbb077becf35d83cb2aac654c353632c00f"
+      "mtime": 1781560354982629308,
+      "size": 2091,
+      "hash": "213db6e9be63594339673250f8f5603fa3a352797afeedf2b749aa1e51f03347"
     },
     "tests/test_complexity_extractor.py": {
-      "mtime": 1781551986976539001,
-      "size": 1654,
-      "hash": "23b64cdfc1de13f780872fd3e1f6caf80388c33821a792c693d7eca3bcf7f0d5"
+      "mtime": 1781560354984629239,
+      "size": 1655,
+      "hash": "18d4cf00efd054bed3c51b0433c7d9bd2559c3ee4cd6c105384d128fd6dc320e"
     },
     "tests/test_database_extractor.py": {
-      "mtime": 1781551971440385429,
-      "size": 1934,
-      "hash": "802bdef8d5be6d5a07f4a129fa2e4df50435988fe38c7b272401fd7bc0e4fc41"
+      "mtime": 1781560354989629066,
+      "size": 1935,
+      "hash": "57f5dcfce11b05af00131dd0b8bfd55c8007e1535cd7724edea9835ee7544edb"
     },
     "tests/test_detectors.py": {
-      "mtime": 1781301832119846075,
-      "size": 3547,
-      "hash": "fff795188d1db7ce0655ee6a43166245898230e80aea2da0ef741f4706e5ed07"
+      "mtime": 1781560354996628824,
+      "size": 3549,
+      "hash": "936ef211b531c0f171da4ad80793b76611bbeb86c394d82cef54369eeb79ef2d"
     },
     "tests/test_duplicates_extractor.py": {
-      "mtime": 1781551994602562819,
-      "size": 2005,
-      "hash": "0f6a7772c9f3ccd0a4c0433efec0e1e3fda8f35d4de3b700ae740b30865eb3ab"
+      "mtime": 1781560354998628755,
+      "size": 2006,
+      "hash": "f9c90be574aabfd24dc9382b4ec2e6beae7efc14eea5f89325ace3009418a2b8"
     },
     "tests/test_env_vars_extractor.py": {
-      "mtime": 1781548581656232353,
-      "size": 2299,
-      "hash": "616b87976a770e5cbd8bb73ee067c25c8506aa7e6f7d33024005cce31bc368ef"
+      "mtime": 1781560355001628651,
+      "size": 2300,
+      "hash": "6089413725f61d8606111643ffa2839d5ab3e17a117bcb5e32baa758a6b86a68"
     },
     "tests/test_extractors.py": {
-      "mtime": 1781301783333315801,
-      "size": 5426,
-      "hash": "4c9e3397a17682998148d9ad3fb345261eb76789e71a65ce86c0fbe3a1f8a435"
+      "mtime": 1781560355005628513,
+      "size": 4576,
+      "hash": "2a34c31995b5115e2ecb96448ee59d26ccf88be4aab809a792924038baf162e0"
     },
     "tests/test_generator.py": {
-      "mtime": 1781556628980580838,
-      "size": 8870,
-      "hash": "f95f3cff8b4b01aee7f7586a3eff38ae2dd4d24ca44e5c20776c79557e1fdb95"
+      "mtime": 1781561217296501900,
+      "size": 13682,
+      "hash": "5b08d1a6d25a734ca4b8f734609c9998519369380fb3ce7c07a8adb2625c7b78"
     },
     "tests/test_html_generator.py": {
-      "mtime": 1781556646187001106,
-      "size": 8664,
-      "hash": "d09cf450dd935127a701d5bd991e153e6a7df31abbad85415a32fee6f1b89f9f"
+      "mtime": 1781560355019628031,
+      "size": 8666,
+      "hash": "e4069d85d49a267074c2ac43c2a3a740334cb30d2e36b992683ceda2de76b681"
     },
     "tests/test_integration.py": {
-      "mtime": 1781301804774549024,
-      "size": 4401,
-      "hash": "26dec4fae8242625eb7784e46409bf84cc110bf40e10908ab7246aa87ab0e267"
+      "mtime": 1781560355022627927,
+      "size": 4402,
+      "hash": "ce195272d930865b09fff4d6fe2072bb60a456569089336bc47d96204bc44a2b"
     },
     "tests/test_project_intelligence_extractor.py": {
-      "mtime": 1781556676727732313,
-      "size": 4678,
-      "hash": "15f7d880e9525b20c419e5aa479747e1e608aee9297262132df92150083bb835"
+      "mtime": 1781560392694380997,
+      "size": 4687,
+      "hash": "c051b9e74ab35fc96970073a44da636aeafef15ce0650c2b020504c6435a4950"
     },
     "tests/test_readme_generator.py": {
-      "mtime": 1781364478736418039,
-      "size": 11335,
-      "hash": "e61f20444f6e957d438ae469b087184a05b1c7086a792202b9355a72b013906e"
+      "mtime": 1781560355036627444,
+      "size": 11337,
+      "hash": "e3f6cb71a10571a3bbf440e25c55d2fd73c81f0280cb9fd5c8070e71ad306d38"
     },
     "tests/test_scanner.py": {
-      "mtime": 1781301832123846118,
-      "size": 3795,
-      "hash": "2349704ead8735f4cac33bbe1a153e2535da39ee6fa4cd42f8eda1314bfe8f05"
+      "mtime": 1781560355038627375,
+      "size": 3797,
+      "hash": "f36a70b149e09f56aebf5c793415cc73cb1010f05abd2f03009be24a76f6ac44"
     },
     "tests/test_scripts_extractor.py": {
-      "mtime": 1781548574538165831,
-      "size": 2100,
-      "hash": "2f67868e0d719456d0ad40f6cf5d06a03520a5e276e5fa8a6e96c5521af97391"
+      "mtime": 1781560355040627306,
+      "size": 2101,
+      "hash": "fa2b10b48373934cdc78e43bb740c4d74e957ab047be287d34b043d42159655e"
     },
     "tests/test_todos_extractor.py": {
-      "mtime": 1781558965924316045,
-      "size": 5837,
-      "hash": "58fbcd5404bfe50a1529394273ba13286e7b5181d7da0e83fcc35d977cea3709"
+      "mtime": 1781560355048627031,
+      "size": 5838,
+      "hash": "3975715ca5cc89d9ae3e3145a31b6b2f1fae125f893bb2030e901757da16ff0b"
     },
     "tests/test_type_coverage_extractor.py": {
-      "mtime": 1781551979005468261,
-      "size": 2117,
-      "hash": "ed7ae039e6ed70a07af80eab3717201046af984802b4ae67fb43261bbd2c14e8"
+      "mtime": 1781560355050626962,
+      "size": 2118,
+      "hash": "5c5bafed478e176fd98ca44fb6322f65ae5382cd3de184820f4e26b00d6090a5"
     }
   }
 }

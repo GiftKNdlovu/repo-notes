@@ -1,13 +1,13 @@
 """Architecture overview extractor."""
 
+import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from collections import defaultdict
-import re
-from repo_notes.scanner import FileInfo
+
 from repo_notes.detectors import get_registry
 from repo_notes.file_cache import read_text
-
+from repo_notes.scanner import FileInfo
 
 LAYER_PATTERNS = {
     "routes": ["routes", "controllers", "handlers", "endpoints", "api", "views"],

@@ -1,7 +1,8 @@
 """Tests for the TODO/FIXME/HACK extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.todos import TodosExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

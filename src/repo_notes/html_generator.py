@@ -2,24 +2,33 @@
 
 from io import StringIO
 from pathlib import Path
-from repo_notes.html_templates import HTML_OPENING, HTML_CLOSING, SIDEBAR_ITEM, BADGES_HTML, SECTION_WRAPPER, CSS, JS
+
 from repo_notes.extractors import (
-    StructureResult,
-    ProjectIntelligenceResult,
-    StatsResult,
-    DependenciesResult,
-    GitResult,
-    ArchitectureResult,
-    SecurityResult,
-    TodosResult,
-    ScriptsResult,
-    EnvVarsResult,
-    CicdResult,
-    DatabaseResult,
-    TypeCoverageResult,
-    ComplexityResult,
-    DuplicateResult,
     ApiEndpointResult,
+    ArchitectureResult,
+    CicdResult,
+    ComplexityResult,
+    DatabaseResult,
+    DependenciesResult,
+    DuplicateResult,
+    EnvVarsResult,
+    GitResult,
+    ProjectIntelligenceResult,
+    ScriptsResult,
+    SecurityResult,
+    StatsResult,
+    StructureResult,
+    TodosResult,
+    TypeCoverageResult,
+)
+from repo_notes.html_templates import (
+    BADGES_HTML,
+    CSS,
+    HTML_CLOSING,
+    HTML_OPENING,
+    JS,
+    SECTION_WRAPPER,
+    SIDEBAR_ITEM,
 )
 
 SECTION_NAMES: dict[str, tuple[str, str]] = {
@@ -167,7 +176,7 @@ class HtmlGenerator:
             if mild:
                 parts.append(f'<span class="badge badge-warning">{mild} mild</span>')
             if not high and not mild:
-                parts.append(f'<span class="badge badge-success">0 issues</span>')
+                parts.append('<span class="badge badge-success">0 issues</span>')
         if git and git.is_repo:
             parts.append(f'<span class="badge badge-success">branch {git.current_branch}</span>')
         return BADGES_HTML.format(badges=" ".join(parts)) if parts else ""
@@ -379,6 +388,13 @@ class HtmlGenerator:
         if result.entry_points:
             eps = "".join(f'<span class="entry-point">{self._escape(str(f))}</span>' for f in sorted(result.entry_points))
             parts.append(f"<h4 style='margin-top:12px'>Entry Points</h4><div class='entry-points'>{eps}</div>")
+
+        if result.import_graph:
+            rows = "".join(
+                f'<tr><td><code>{self._escape(f)}</code></td><td><code>{", ".join(self._escape(i) for i in sorted(imports[:8]))}{", ..." if len(imports) > 8 else ""}</code></td></tr>'
+                for f, imports in sorted(result.import_graph.items())
+            )
+            parts.append(f"<details class='collapse'><summary>Import Graph ({len(result.import_graph)} files)</summary><table><thead><tr><th>File</th><th>Imports</th></tr></thead><tbody>{rows}</tbody></table></details>")
 
         return "".join(parts)
 

@@ -4,8 +4,9 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.file_cache import read_text
+from repo_notes.scanner import FileInfo
 
 
 @dataclass(slots=True)
@@ -339,12 +340,12 @@ def _detect_tools_from_files(files: list[FileInfo]) -> dict[str, list[DetectedTo
     tools_by_cat: dict[str, list[DetectedTool]] = defaultdict(list)
     found: set[str] = set()
 
-    file_map: dict[str, list[tuple[Path, str]]] = {}
+    file_map: dict[str, list[tuple[Path, str, Path]]] = {}
     for f in files:
         rel = f.relative_path
         name = rel.name.lower()
         path_str = rel.as_posix()
-        file_map.setdefault(name, []).append((rel, path_str))
+        file_map.setdefault(name, []).append((rel, path_str, f.path))
 
     for f in files:
         rel = f.relative_path
@@ -418,8 +419,8 @@ def _try_extract_version(td: dict, file_map: dict, current_content: str) -> str 
         else:
             content = None
             if cf in file_map:
-                for rel, path_str in file_map[cf]:
-                    content = read_text(rel if rel.exists() else Path(path_str))
+                for rel, path_str, abs_path in file_map[cf]:
+                    content = read_text(abs_path)
                     break
             parsed = None
             if content:

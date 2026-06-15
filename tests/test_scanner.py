@@ -1,8 +1,9 @@
 """Tests for the scanner module."""
 
-from pathlib import Path
 import tempfile
-from repo_notes.scanner import scan_directory, is_binary
+from pathlib import Path
+
+from repo_notes.scanner import is_binary, scan_directory
 
 
 def test_scan_empty_directory():

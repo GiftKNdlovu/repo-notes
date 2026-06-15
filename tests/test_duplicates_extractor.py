@@ -1,7 +1,8 @@
 """Tests for the duplicate files extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.duplicates import DuplicateExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

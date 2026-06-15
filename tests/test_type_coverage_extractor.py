@@ -1,7 +1,8 @@
 """Tests for the type coverage extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.type_coverage import TypeCoverageExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

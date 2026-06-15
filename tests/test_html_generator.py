@@ -1,13 +1,14 @@
 """Tests for the HTML generator."""
 
 from pathlib import Path
-from repo_notes.html_generator import HtmlGenerator
-from repo_notes.extractors.structure import StructureResult
-from repo_notes.extractors.stats import StatsResult
-from repo_notes.extractors.git import GitResult
+
 from repo_notes.extractors.architecture import ArchitectureResult
-from repo_notes.extractors.security import SecurityResult
 from repo_notes.extractors.dependencies import DependenciesResult
+from repo_notes.extractors.git import GitResult
+from repo_notes.extractors.security import SecurityResult
+from repo_notes.extractors.stats import StatsResult
+from repo_notes.extractors.structure import StructureResult
+from repo_notes.html_generator import HtmlGenerator
 
 
 def test_generates_html():

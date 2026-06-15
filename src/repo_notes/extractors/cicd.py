@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+
 from repo_notes.scanner import FileInfo
 
 
@@ -55,7 +56,7 @@ class CicdExtractor:
                 data = yaml.safe_load(f)
             if not data or not isinstance(data, dict):
                 return []
-            stages = data.get("stages", [])
+            data.get("stages", [])
             jobs = []
             for key, val in data.items():
                 if isinstance(val, dict) and "script" in val:

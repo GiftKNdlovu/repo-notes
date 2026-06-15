@@ -1,12 +1,12 @@
 """Security scanner for secrets and sensitive files."""
 
+import math
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-import re
-import math
-from repo_notes.scanner import FileInfo
-from repo_notes.file_cache import read_text
 
+from repo_notes.file_cache import read_text
+from repo_notes.scanner import FileInfo
 
 SECRET_PATTERNS = [
     (r"aws_access_key_id\s*[:=]\s*['\"]?([A-Z0-9]{20})['\"]?", "AWS Access Key"),

@@ -12,7 +12,6 @@ class DetectorConfig:
 @dataclass
 class ExtractorConfig:
     structure: bool = True
-    key_files: bool = True
     project_intelligence: bool = True
     stats: bool = True
     dependencies: bool = True
@@ -111,7 +110,9 @@ class Config:
     @staticmethod
     def _from_dict(data: dict) -> "Config":
         det_cfg = DetectorConfig(**data.pop("detectors", {}))
-        ext_cfg = ExtractorConfig(**data.pop("extractors", {}))
+        ext_data = data.pop("extractors", {})
+        ext_data.pop("key_files", None)
+        ext_cfg = ExtractorConfig(**ext_data)
         sec_cfg = SecurityConfig(**data.pop("security", {}))
         str_cfg = StructureConfig(**data.pop("structure", {}))
         out_cfg = OutputConfig(**data.pop("output", {}))
@@ -134,7 +135,6 @@ class Config:
             },
             "extractors": {
                 "structure": self.extractors.structure,
-                "key_files": self.extractors.key_files,
                 "project_intelligence": self.extractors.project_intelligence,
                 "stats": self.extractors.stats,
                 "dependencies": self.extractors.dependencies,

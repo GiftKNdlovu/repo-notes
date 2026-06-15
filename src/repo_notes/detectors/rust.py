@@ -2,7 +2,6 @@
 
 from .base import ExtensionDetector, LanguageInfo
 
-
 RUST_INFO = LanguageInfo(
     name="rust",
     category="backend",

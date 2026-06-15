@@ -1,9 +1,10 @@
 """Extractor for detecting duplicate or near-duplicate files."""
 
 import hashlib
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from collections import defaultdict
+
 from repo_notes.scanner import FileInfo
 
 
