@@ -7,6 +7,7 @@ import click
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
+from repo_notes.cache import CacheManager
 from repo_notes.config import Config
 from repo_notes.scanner import scan_directory
 from repo_notes.extractors import (
@@ -74,12 +75,18 @@ console = Console()
     help="Suppress progress output",
 )
 @click.option(
+    "--no-cache",
+    is_flag=True,
+    default=False,
+    help="Bypass incremental cache and force full re-scan",
+)
+@click.option(
     "--replace-readme",
     is_flag=True,
     default=False,
     help="Write to README.md instead of rnREADME.md",
 )
-def cli(path, config, output, max_depth, include_hidden, format, force, quiet, replace_readme):
+def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, replace_readme):
     """Scan REPO_PATH and generate project notes.
 
     By default, generates REPO_NOTES.md with detailed technical notes.
@@ -99,6 +106,13 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, r
         overrides["output"] = {"format": format}
     if overrides:
         cfg = cfg.merge_cli(**overrides)
+
+    cache = CacheManager(root, cfg)
+    if not no_cache and cache.is_valid():
+        current_states = cache.compute_current_states()
+        if not cache.has_changes(current_states):
+            console.print("[green]No changes since last scan. Use --no-cache to force re-scan.[/green]")
+            return
 
     console.print(f"[bold]repo-notes[/bold] scanning [cyan]{root}[/cyan]...")
 
@@ -208,3 +222,6 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, r
         console.print(f"[green]Done![/green] HTML notes written to [bold]{html_output}[/bold]")
         console.print(f"  - {len(files)} files scanned")
         console.print(f"  - {size:,} bytes")
+
+    # Update cache after successful scan
+    cache.save_from_file_infos(files)
