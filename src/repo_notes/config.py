@@ -18,6 +18,9 @@ class ExtractorConfig:
     git: bool = True
     architecture: bool = True
     security: bool = True
+    todos: bool = True
+    scripts: bool = True
+    env_vars: bool = True
 
 
 @dataclass
@@ -43,6 +46,9 @@ class OutputConfig:
         "git",
         "arch",
         "security",
+        "todos",
+        "scripts",
+        "env_vars",
     ])
 
 
@@ -121,6 +127,9 @@ class Config:
                 "git": self.extractors.git,
                 "architecture": self.extractors.architecture,
                 "security": self.extractors.security,
+                "todos": self.extractors.todos,
+                "scripts": self.extractors.scripts,
+                "env_vars": self.extractors.env_vars,
             },
             "security": {
                 "entropy_threshold": self.security.entropy_threshold,

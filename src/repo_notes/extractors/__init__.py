@@ -8,6 +8,9 @@ from .git import GitExtractor, GitResult
 from .architecture import ArchitectureExtractor, ArchitectureResult
 from .security import SecurityExtractor, SecurityResult
 from .readme_data import ReadmeDataExtractor, ReadmeData
+from .todos import TodosExtractor, TodosResult
+from .scripts import ScriptsExtractor, ScriptsResult
+from .env_vars import EnvVarsExtractor, EnvVarsResult
 
 __all__ = [
     "StructureExtractor",
@@ -26,4 +29,10 @@ __all__ = [
     "SecurityResult",
     "ReadmeDataExtractor",
     "ReadmeData",
+    "TodosExtractor",
+    "TodosResult",
+    "ScriptsExtractor",
+    "ScriptsResult",
+    "EnvVarsExtractor",
+    "EnvVarsResult",
 ]

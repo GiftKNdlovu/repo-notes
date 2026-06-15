@@ -11,6 +11,9 @@ from repo_notes.extractors import (
     GitResult,
     ArchitectureResult,
     SecurityResult,
+    TodosResult,
+    ScriptsResult,
+    EnvVarsResult,
 )
 
 SECTION_NAMES: dict[str, tuple[str, str]] = {
@@ -21,6 +24,9 @@ SECTION_NAMES: dict[str, tuple[str, str]] = {
     "git": ("🌿", "Git Information"),
     "arch": ("🏗️", "Architecture Overview"),
     "security": ("🔒", "Security Notes"),
+    "todos": ("📝", "TODO / FIXME / HACK"),
+    "scripts": ("🔧", "Build Scripts"),
+    "env_vars": ("🌐", "Environment Variables"),
 }
 
 
@@ -62,6 +68,9 @@ class HtmlGenerator:
             "git": results.get("git") if results.get("git") and getattr(results.get("git"), "is_repo", False) else None,
             "arch": results.get("arch"),
             "security": results.get("security"),
+            "todos": results.get("todos"),
+            "scripts": results.get("scripts"),
+            "env_vars": results.get("env_vars"),
         }
 
         renderers = {
@@ -72,6 +81,9 @@ class HtmlGenerator:
             "git": self._render_git,
             "arch": self._render_architecture,
             "security": self._render_security,
+            "todos": self._render_todos,
+            "scripts": self._render_scripts,
+            "env_vars": self._render_env_vars,
         }
 
         order = results.get("section_order") or list(SECTION_NAMES.keys())
@@ -342,6 +354,71 @@ class HtmlGenerator:
             parts.append(f"<details class='see-more'><summary>High Entropy Strings ({len(result.high_entropy_strings)} found, review recommended)</summary><div class='table-wrap'><table><thead><tr><th>File</th><th>Entropy</th><th>Line</th><th>Preview</th></tr></thead><tbody>{rows}</tbody></table></div></details>")
 
         return "".join(parts)
+
+    def _render_todos(self, result: TodosResult) -> str:
+        if not result.items:
+            return "<p>No developer comments found.</p>"
+        tag_order = ["FIXME", "HACK", "TODO", "XXX", "BUG", "WORKAROUND", "HACKME"]
+        parts = []
+        for tag in tag_order:
+            tag_items = [i for i in result.items if i["tag"] == tag]
+            if not tag_items:
+                continue
+            total = result.count_by_tag.get(tag, 0)
+            rows = "".join(
+                f'<tr><td><code>{self._escape(i["file"])}</code></td><td>{i["line"]}</td><td>{self._escape(i["message"])}</td></tr>'
+                for i in tag_items
+            )
+            header = f"{tag} ({total} total)"
+            if total > len(tag_items):
+                header += f" — top {len(tag_items)}"
+            parts.append(
+                f"<details class='collapse' open><summary>{header}</summary>"
+                f"<div class='table-wrap'><table><thead><tr><th>File</th><th>Line</th><th>Message</th></tr></thead>"
+                f"<tbody>{rows}</tbody></table></div></details>"
+            )
+        return "".join(parts)
+
+    def _render_scripts(self, result: ScriptsResult) -> str:
+        parts = []
+        if result.package_json:
+            items = "".join(
+                f"<li><strong>{self._escape(k)}</strong>: <code>{self._escape(v)}</code></li>"
+                for k, v in sorted(result.package_json.items())
+            )
+            parts.append(f"<details class='collapse' open><summary>package.json Scripts ({len(result.package_json)})</summary><ul class='file-list'>{items}</ul></details>")
+        if result.makefile_targets:
+            items = "".join(f"<li><code>{self._escape(t)}</code></li>" for t in result.makefile_targets[:30])
+            if len(result.makefile_targets) > 30:
+                items += f"<li><em>...and {len(result.makefile_targets) - 30} more</em></li>"
+            parts.append(f"<details class='collapse' open><summary>Makefile Targets ({len(result.makefile_targets)})</summary><ul class='file-list'>{items}</ul></details>")
+        if result.justfile_recipes:
+            items = "".join(f"<li><code>{self._escape(r)}</code></li>" for r in result.justfile_recipes[:30])
+            if len(result.justfile_recipes) > 30:
+                items += f"<li><em>...and {len(result.justfile_recipes) - 30} more</em></li>"
+            parts.append(f"<details class='collapse' open><summary>Justfile Recipes ({len(result.justfile_recipes)})</summary><ul class='file-list'>{items}</ul></details>")
+        if result.pyproject_scripts:
+            items = "".join(
+                f"<li><strong>{self._escape(k)}</strong>: <code>{self._escape(v)}</code></li>"
+                for k, v in sorted(result.pyproject_scripts.items())
+            )
+            parts.append(f"<details class='collapse' open><summary>pyproject.toml Scripts ({len(result.pyproject_scripts)})</summary><ul class='file-list'>{items}</ul></details>")
+        if not parts:
+            return "<p>No build scripts found.</p>"
+        return "".join(parts)
+
+    def _render_env_vars(self, result: EnvVarsResult) -> str:
+        if not result.variables:
+            return "<p>No environment variable references found.</p>"
+        rows = "".join(
+            f'<tr><td><code>{self._escape(var)}</code></td><td>{", ".join(f"<code>{f}</code>" for f in files[:5])}{" <em>..." if len(files) > 5 else ""}</td></tr>'
+            for var, files in list(result.variables.items())[:40]
+        )
+        return (
+            f"<p><strong>{len(result.variables)}</strong> unique environment variables referenced.</p>"
+            f"<div class='table-wrap'><table><thead><tr><th>Variable</th><th>Files</th></tr></thead>"
+            f"<tbody>{rows}</tbody></table></div>"
+        )
 
     def _describe_dep(self, val) -> str:
         if isinstance(val, dict):

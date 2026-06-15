@@ -10,6 +10,9 @@ from repo_notes.extractors import (
     GitResult,
     ArchitectureResult,
     SecurityResult,
+    TodosResult,
+    ScriptsResult,
+    EnvVarsResult,
 )
 
 SECTION_NAMES: dict[str, str] = {
@@ -20,6 +23,9 @@ SECTION_NAMES: dict[str, str] = {
     "git": "Git Information",
     "arch": "Architecture Overview",
     "security": "Security Notes",
+    "todos": "TODO / FIXME / HACK",
+    "scripts": "Build Scripts",
+    "env_vars": "Environment Variables",
 }
 
 
@@ -73,6 +79,9 @@ class MarkdownGenerator:
             "git": results.get("git") if results.get("git") and getattr(results.get("git"), "is_repo", False) else None,
             "arch": results.get("arch"),
             "security": results.get("security"),
+            "todos": results.get("todos"),
+            "scripts": results.get("scripts"),
+            "env_vars": results.get("env_vars"),
         }
 
         renderers = {
@@ -83,6 +92,9 @@ class MarkdownGenerator:
             "git": self._render_git,
             "arch": self._render_architecture,
             "security": self._render_security,
+            "todos": self._render_todos,
+            "scripts": self._render_scripts,
+            "env_vars": self._render_env_vars,
         }
 
         order = results.get("section_order") or list(SECTION_NAMES.keys())
@@ -318,6 +330,97 @@ class MarkdownGenerator:
             lines.append(f"<details>\n<summary>High Entropy Strings ({len(result.high_entropy_strings)} found, review recommended)</summary>\n\n" + "\n".join(entropy_lines) + "\n</details>")
             lines.append("")
 
+        return "\n".join(lines)
+
+    def _render_todos(self, result: TodosResult) -> str:
+        lines = ["## TODO / FIXME / HACK", ""]
+        if not result.items:
+            lines.append("No developer comments found.")
+            return "\n".join(lines)
+
+        tag_order = ["FIXME", "HACK", "TODO", "XXX", "BUG", "WORKAROUND", "HACKME"]
+        for tag in tag_order:
+            tag_items = [i for i in result.items if i["tag"] == tag]
+            if not tag_items:
+                continue
+            total = result.count_by_tag.get(tag, 0)
+            lines.append(f"### {tag} ({total} total)")
+
+            if total > len(tag_items):
+                lines.append(f"*Showing top {len(tag_items)} of {total}*")
+
+            lines.append("")
+            lines.append("| File | Line | Message |")
+            lines.append("|------|------|---------|")
+            for item in tag_items:
+                msg = item["message"].replace("|", "\\|") if item["message"] else "—"
+                lines.append(f"| `{item['file']}` | {item['line']} | {msg} |")
+            lines.append("")
+        return "\n".join(lines)
+
+    def _render_scripts(self, result: ScriptsResult) -> str:
+        lines = ["## Build Scripts", ""]
+        has_any = False
+
+        if result.package_json:
+            has_any = True
+            lines.append("### package.json Scripts")
+            lines.append("")
+            for name, cmd in sorted(result.package_json.items()):
+                lines.append(f"- **{name}**: `{cmd}`")
+            lines.append("")
+
+        if result.makefile_targets:
+            has_any = True
+            lines.append("### Makefile Targets")
+            lines.append("")
+            for t in result.makefile_targets[:30]:
+                lines.append(f"- `{t}`")
+            if len(result.makefile_targets) > 30:
+                lines.append(f"- *...and {len(result.makefile_targets) - 30} more*")
+            lines.append("")
+
+        if result.justfile_recipes:
+            has_any = True
+            lines.append("### Justfile Recipes")
+            lines.append("")
+            for r in result.justfile_recipes[:30]:
+                lines.append(f"- `{r}`")
+            if len(result.justfile_recipes) > 30:
+                lines.append(f"- *...and {len(result.justfile_recipes) - 30} more*")
+            lines.append("")
+
+        if result.pyproject_scripts:
+            has_any = True
+            lines.append("### pyproject.toml Scripts")
+            lines.append("")
+            for name, cmd in sorted(result.pyproject_scripts.items()):
+                lines.append(f"- **{name}**: `{cmd}`")
+            lines.append("")
+
+        if not has_any:
+            lines.append("No build scripts found.")
+
+        return "\n".join(lines)
+
+    def _render_env_vars(self, result: EnvVarsResult) -> str:
+        lines = ["## Environment Variables", ""]
+        if not result.variables:
+            lines.append("No environment variable references found.")
+            return "\n".join(lines)
+
+        lines.append(f"**{len(result.variables)}** unique environment variables referenced.")
+        lines.append("")
+        lines.append("| Variable | Files |")
+        lines.append("|----------|-------|")
+        for var, files in list(result.variables.items())[:40]:
+            files_str = ", ".join(f"`{f}`" for f in files[:5])
+            if len(files) > 5:
+                files_str += f", *...and {len(files) - 5} more*"
+            lines.append(f"| `{var}` | {files_str} |")
+        if len(result.variables) > 40:
+            lines.append(f"| *...and {len(result.variables) - 40} more* | |")
+        lines.append("")
         return "\n".join(lines)
 
     def _format_size(self, size: int) -> str:
