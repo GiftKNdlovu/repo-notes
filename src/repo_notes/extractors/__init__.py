@@ -8,6 +8,7 @@ from .git import GitExtractor, GitResult
 from .architecture import ArchitectureExtractor, ArchitectureResult
 from .security import SecurityExtractor, SecurityResult
 from .readme_data import ReadmeDataExtractor, ReadmeData
+from .project_intelligence import ProjectIntelligenceExtractor, ProjectIntelligenceResult
 from .todos import TodosExtractor, TodosResult
 from .scripts import ScriptsExtractor, ScriptsResult
 from .env_vars import EnvVarsExtractor, EnvVarsResult
@@ -16,6 +17,7 @@ from .database import DatabaseExtractor, DatabaseResult
 from .type_coverage import TypeCoverageExtractor, TypeCoverageResult
 from .complexity import ComplexityExtractor, ComplexityResult
 from .duplicates import DuplicateExtractor, DuplicateResult
+from .api_endpoints import ApiEndpointExtractor, ApiEndpointResult
 
 __all__ = [
     "StructureExtractor",
@@ -34,6 +36,8 @@ __all__ = [
     "SecurityResult",
     "ReadmeDataExtractor",
     "ReadmeData",
+    "ProjectIntelligenceExtractor",
+    "ProjectIntelligenceResult",
     "TodosExtractor",
     "TodosResult",
     "ScriptsExtractor",
@@ -50,4 +54,6 @@ __all__ = [
     "ComplexityResult",
     "DuplicateExtractor",
     "DuplicateResult",
+    "ApiEndpointExtractor",
+    "ApiEndpointResult",
 ]

@@ -3,7 +3,6 @@
 from pathlib import Path
 from repo_notes.html_generator import HtmlGenerator
 from repo_notes.extractors.structure import StructureResult
-from repo_notes.extractors.key_files import KeyFilesResult
 from repo_notes.extractors.stats import StatsResult
 from repo_notes.extractors.git import GitResult
 from repo_notes.extractors.architecture import ArchitectureResult
@@ -36,12 +35,13 @@ def test_includes_structure():
     assert 'class="ti"' in html
 
 
-def test_includes_key_files():
+def test_includes_project_intelligence():
+    from repo_notes.extractors import ProjectIntelligenceResult
     gen = HtmlGenerator(Path("proj"))
     html = gen.generate(
-        key_files=KeyFilesResult(categories={"readme": [Path("README.md")]})
+        project_intelligence=ProjectIntelligenceResult(categories={"readme": [Path("README.md")]})
     )
-    assert "Key Files" in html
+    assert "Project Intelligence" in html
     assert "README.md" in html
 
 

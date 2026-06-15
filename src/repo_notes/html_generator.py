@@ -5,7 +5,7 @@ from pathlib import Path
 from repo_notes.html_templates import HTML_OPENING, HTML_CLOSING, SIDEBAR_ITEM, BADGES_HTML, SECTION_WRAPPER, CSS, JS
 from repo_notes.extractors import (
     StructureResult,
-    KeyFilesResult,
+    ProjectIntelligenceResult,
     StatsResult,
     DependenciesResult,
     GitResult,
@@ -19,11 +19,12 @@ from repo_notes.extractors import (
     TypeCoverageResult,
     ComplexityResult,
     DuplicateResult,
+    ApiEndpointResult,
 )
 
 SECTION_NAMES: dict[str, tuple[str, str]] = {
     "structure": ("📁", "Project Structure"),
-    "key_files": ("📄", "Key Files"),
+    "project_intelligence": ("🧠", "Project Intelligence"),
     "stats": ("📊", "Code Statistics"),
     "deps": ("📦", "Dependencies"),
     "git": ("🌿", "Git Information"),
@@ -37,6 +38,7 @@ SECTION_NAMES: dict[str, tuple[str, str]] = {
     "type_coverage": ("📋", "Type Coverage"),
     "complexity": ("🔍", "Code Complexity"),
     "duplicates": ("📑", "Duplicate Files"),
+    "api_endpoints": ("🌐", "API Endpoints"),
 }
 
 
@@ -47,7 +49,7 @@ class HtmlGenerator:
     def generate(
         self,
         structure: StructureResult | None = None,
-        key_files: KeyFilesResult | None = None,
+        project_intelligence: ProjectIntelligenceResult | None = None,
         stats: StatsResult | None = None,
         deps: DependenciesResult | None = None,
         git: GitResult | None = None,
@@ -56,7 +58,7 @@ class HtmlGenerator:
         section_order: list[str] | None = None,
     ) -> str:
         buf = StringIO()
-        self.write_to(buf, section_order=section_order, structure=structure, key_files=key_files, stats=stats, deps=deps, git=git, arch=arch, security=security)
+        self.write_to(buf, section_order=section_order, structure=structure, project_intelligence=project_intelligence, stats=stats, deps=deps, git=git, arch=arch, security=security)
         return buf.getvalue()
 
     def write_to(self, path_or_buf, **results) -> None:
@@ -72,7 +74,7 @@ class HtmlGenerator:
     def _stream_write(self, f, **results) -> None:
         results_map = {
             "structure": results.get("structure"),
-            "key_files": results.get("key_files"),
+            "project_intelligence": results.get("project_intelligence"),
             "stats": results.get("stats"),
             "deps": results.get("deps"),
             "git": results.get("git") if results.get("git") and getattr(results.get("git"), "is_repo", False) else None,
@@ -86,11 +88,12 @@ class HtmlGenerator:
             "type_coverage": results.get("type_coverage"),
             "complexity": results.get("complexity"),
             "duplicates": results.get("duplicates"),
+            "api_endpoints": results.get("api_endpoints"),
         }
 
         renderers = {
             "structure": self._render_structure,
-            "key_files": self._render_key_files,
+            "project_intelligence": self._render_project_intelligence,
             "stats": self._render_stats,
             "deps": self._render_dependencies,
             "git": self._render_git,
@@ -104,6 +107,7 @@ class HtmlGenerator:
             "type_coverage": self._render_type_coverage,
             "complexity": self._render_complexity,
             "duplicates": self._render_duplicates,
+            "api_endpoints": self._render_api_endpoints,
         }
 
         order = results.get("section_order") or list(SECTION_NAMES.keys())
@@ -245,14 +249,41 @@ class HtmlGenerator:
         parts.append("</ul></div></div>")
         return "".join(parts)
 
-    def _render_key_files(self, result: KeyFilesResult) -> str:
+    def _render_project_intelligence(self, result: ProjectIntelligenceResult) -> str:
         parts = []
-        for cat, files in result.categories.items():
-            if not files:
+
+        by_cat_order = [
+            "Languages", "Frameworks", "Build", "Testing", "Linting",
+            "Database", "Messaging", "Containers", "Cloud",
+            "Monitoring", "Documentation", "Automation", "Mobile", "Utilities",
+        ]
+
+        if result.total_tools:
+            badge = f"<p><strong>{result.total_tools}</strong> tools detected across <strong>{result.total_categories}</strong> categories.</p>"
+            parts.append(badge)
+
+        for cat in by_cat_order:
+            tools = result.tools.get(cat)
+            if not tools:
                 continue
-            label = cat.replace("_", " ").title()
-            items = "".join(f"<li>{self._escape(str(f))}</li>" for f in sorted(files))
-            parts.append(f"<details class='collapse'><summary>{label} ({len(files)})</summary><ul class='file-list'>{items}</ul></details>")
+            rows = "".join(
+                f"<tr><td><strong>{self._escape(t.name)}</strong></td><td>{self._escape(t.version) if t.version else '—'}</td><td>{'<code>' + self._escape(t.config_file) + '</code>' if t.config_file else '—'}</td></tr>"
+                for t in sorted(tools, key=lambda x: x.name.lower())
+            )
+            parts.append(
+                f"<details class='collapse' open><summary>{cat} ({len(tools)})</summary>"
+                f"<div class='table-wrap'><table><thead><tr><th>Tool</th><th>Version</th><th>Config</th></tr></thead>"
+                f"<tbody>{rows}</tbody></table></div></details>"
+            )
+
+        if result.categories:
+            items = ""
+            for cat, files in sorted(result.categories.items()):
+                label = cat.replace("_", " ").title()
+                files_str = ", ".join(f"<code>{self._escape(str(f))}</code>" for f in sorted(files))
+                items += f"<li><strong>{label}:</strong> {files_str}</li>"
+            parts.append(f"<details class='collapse' open><summary>Key Files ({sum(len(v) for v in result.categories.values())})</summary><ul class='file-list'>{items}</ul></details>")
+
         return "".join(parts)
 
     def _render_stats(self, result: StatsResult) -> str:
@@ -542,6 +573,28 @@ class HtmlGenerator:
             )
             html += f"<div class='table-wrap'><table><thead><tr><th>Duplicate File</th><th>Original</th><th>Size</th><th>Similarity</th></tr></thead><tbody>{rows}</tbody></table></div>"
         return html
+
+    def _render_api_endpoints(self, result: ApiEndpointResult) -> str:
+        if not result.endpoints:
+            return "<p>No API endpoints detected.</p>"
+        by_framework: dict[str, list[dict]] = {}
+        for ep in result.endpoints:
+            by_framework.setdefault(ep["framework"], []).append(ep)
+        parts = []
+        for framework in ["FastAPI", "Flask", "Django", "Express", "Rails"]:
+            fw_eps = by_framework.get(framework)
+            if not fw_eps:
+                continue
+            rows = "".join(
+                f"<tr><td>{ep['method']}</td><td><code>{self._escape(ep['path'])}</code></td><td><code>{self._escape(ep['file'])}</code></td><td>{ep['line']}</td></tr>"
+                for ep in sorted(fw_eps, key=lambda x: (x["path"], x["method"]))
+            )
+            parts.append(
+                f"<details class='collapse' open><summary>{framework} ({len(fw_eps)} endpoints)</summary>"
+                f"<div class='table-wrap'><table><thead><tr><th>Method</th><th>Path</th><th>File</th><th>Line</th></tr></thead>"
+                f"<tbody>{rows}</tbody></table></div></details>"
+            )
+        return "".join(parts)
 
     def _describe_dep(self, val) -> str:
         if isinstance(val, dict):

@@ -13,6 +13,7 @@ from repo_notes.scanner import scan_directory
 from repo_notes.extractors import (
     StructureExtractor,
     KeyFilesExtractor,
+    ProjectIntelligenceExtractor,
     StatsExtractor,
     DependenciesExtractor,
     GitExtractor,
@@ -27,6 +28,7 @@ from repo_notes.extractors import (
     TypeCoverageExtractor,
     ComplexityExtractor,
     DuplicateExtractor,
+    ApiEndpointExtractor,
 )
 from repo_notes.generator import MarkdownGenerator
 from repo_notes.readme_generator import ReadmeGenerator
@@ -62,6 +64,12 @@ INIT_TEMPLATE = """# repo-notes configuration
 #   todos: true
 #   scripts: true
 #   env_vars: true
+#   cicd: true
+#   database: true
+#   type_coverage: true
+#   complexity: true
+#   duplicates: true
+#   api_endpoints: true
 
 # security:
 #   entropy_threshold: 4.5
@@ -84,6 +92,12 @@ INIT_TEMPLATE = """# repo-notes configuration
 #     - todos
 #     - scripts
 #     - env_vars
+#     - cicd
+#     - database
+#     - type_coverage
+#     - complexity
+#     - duplicates
+#     - api_endpoints
 """
 
 
@@ -273,8 +287,8 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
 
         if cfg.extractors.structure:
             extractors.append(("structure", StructureExtractor(max_depth=cfg.structure.max_depth), files))
-        if cfg.extractors.key_files:
-            extractors.append(("key_files", KeyFilesExtractor(), files))
+        if cfg.extractors.key_files or cfg.extractors.project_intelligence:
+            extractors.append(("project_intelligence", ProjectIntelligenceExtractor(), files))
         if cfg.extractors.stats:
             extractors.append(("stats", StatsExtractor(), files))
         if cfg.extractors.dependencies:
@@ -301,6 +315,8 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
             extractors.append(("complexity", ComplexityExtractor(), files))
         if cfg.extractors.duplicates:
             extractors.append(("duplicates", DuplicateExtractor(), files))
+        if cfg.extractors.api_endpoints:
+            extractors.append(("api_endpoints", ApiEndpointExtractor(), files))
         # README data always extracted
         extractors.append(("readme", ReadmeDataExtractor(), files))
 
