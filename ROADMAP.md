@@ -28,7 +28,7 @@ Planned features for `repo-notes`, organized by category.
 
 - [x] **Parallel file scanning** — `concurrent.futures` for all extractors
 - [x] **File content caching** — share file reads across extractors via `@lru_cache`
-- [ ] **Incremental updates** — only re-scan changed files using content hashes
+- [x] **Incremental updates** — `.repo-notes-cache.json` tracks file mtime/size/hash, skips scan if unchanged
 - [x] **Streaming output** — write progressively to file via `write_to()` methods
 
 ## New Extractors

@@ -1,5 +1,7 @@
 """File scanner with .gitignore support."""
 
+import os
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
@@ -30,6 +32,8 @@ DEFAULT_IGNORE = [
     "*.swp",
     "*.swo",
     "*~",
+    ".repo-notes-cache.json",
+    ".repo-notes-cache.tmp",
 ]
 
 
@@ -64,6 +68,64 @@ def is_binary(path: Path) -> bool:
         return True
 
 
+def _walk_entries(
+    root: Path,
+    include_hidden: bool = False,
+) -> Iterator[os.DirEntry]:
+    """Walk directory tree with os.scandir for zero-stat traversal."""
+    stack: list[tuple[Path, bool]] = [(root, False)]
+    while stack:
+        dir_path, skip = stack.pop()
+        if skip:
+            continue
+        try:
+            with os.scandir(dir_path) as it:
+                for entry in it:
+                    if not include_hidden and entry.name.startswith("."):
+                        continue
+                    try:
+                        if entry.is_dir(follow_symlinks=False):
+                            stack.append((entry.path, False))
+                        elif entry.is_file(follow_symlinks=False):
+                            yield entry
+                    except OSError:
+                        continue
+        except PermissionError:
+            continue
+
+
+def _process_entry(
+    entry: os.DirEntry, root: Path, root_str: str, spec: pathspec.PathSpec,
+    min_file_size: int,
+) -> FileInfo | None:
+    """Process a single DirEntry into FileInfo, or None if filtered out."""
+    try:
+        rel = entry.path[len(root_str):]
+    except (ValueError, IndexError):
+        return None
+    if spec.match_file(rel):
+        return None
+    try:
+        size = entry.stat().st_size
+    except OSError:
+        return None
+    if min_file_size > 0 and size < min_file_size:
+        return None
+    path = Path(entry.path)
+    try:
+        binary = is_binary(path)
+    except OSError:
+        binary = True
+    _, ext = os.path.splitext(entry.name)
+    return FileInfo(
+        path=path,
+        relative_path=Path(rel),
+        size=size,
+        extension=ext.lower(),
+        is_binary=binary,
+    )
+
+
 def scan_directory(
     root: Path,
     include_hidden: bool = False,
@@ -71,6 +133,9 @@ def scan_directory(
     min_file_size: int = 0,
 ) -> Iterator[FileInfo]:
     """Scan a directory and yield FileInfo for each non-ignored file.
+
+    Uses os.scandir for fast directory traversal with cached stat info,
+    and parallel binary detection via ThreadPoolExecutor.
 
     Args:
         root: Directory to scan
@@ -80,26 +145,23 @@ def scan_directory(
     """
     root = root.resolve()
     spec = build_spec(root, extra_excludes)
+    root_str = str(root) + "/"
 
-    for path in root.rglob("*"):
-        if not path.is_file():
-            continue
-        rel = path.relative_to(root).as_posix()
-        if spec.match_file(rel):
-            continue
-        if not include_hidden and any(part.startswith(".") for part in path.relative_to(root).parts):
-            continue
+    # Phase 1: walk tree and collect entry handles (fast, no I/O beyond stat)
+    entries: list[os.DirEntry] = list(_walk_entries(root, include_hidden))
 
-        try:
-            stat = path.stat()
-            if min_file_size > 0 and stat.st_size < min_file_size:
-                continue
-            yield FileInfo(
-                path=path,
-                relative_path=path.relative_to(root),
-                size=stat.st_size,
-                extension=path.suffix.lower(),
-                is_binary=is_binary(path),
-            )
-        except OSError:
-            continue
+    if not entries:
+        return
+
+    # Phase 2: process all entries in parallel (gitignore matching + stat
+    # caching + binary detection)
+    max_workers = min(8, (os.cpu_count() or 1) * 2) if len(entries) > 1 else 1
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = [
+            pool.submit(_process_entry, e, root, root_str, spec, min_file_size)
+            for e in entries
+        ]
+        for future in futures:
+            result = future.result()
+            if result is not None:
+                yield result
