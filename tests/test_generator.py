@@ -3,7 +3,6 @@
 from pathlib import Path
 from repo_notes.generator import MarkdownGenerator
 from repo_notes.extractors.structure import StructureResult
-from repo_notes.extractors.key_files import KeyFilesResult
 from repo_notes.extractors.stats import StatsResult
 from repo_notes.extractors.git import GitResult
 from repo_notes.extractors.architecture import ArchitectureResult
@@ -28,12 +27,13 @@ def test_includes_structure():
     assert "main.py" in md
 
 
-def test_includes_key_files():
+def test_includes_project_intelligence():
+    from repo_notes.extractors import ProjectIntelligenceResult
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(
-        key_files=KeyFilesResult(categories={"readme": [Path("README.md")]})
+        project_intelligence=ProjectIntelligenceResult(categories={"readme": [Path("README.md")]})
     )
-    assert "## Key Files" in md
+    assert "## Project Intelligence" in md
     assert "Readme" in md
     assert "README.md" in md
 

@@ -34,7 +34,7 @@ Planned features for `repo-notes`, organized by category.
 ## New Extractors
 
 - [x] **TODO/FIXME/HACK extraction** — surface developer comments across all languages
-- [ ] **API endpoint detection** — routes from Flask, FastAPI, Django, Express, Rails
+- [x] **API endpoint detection** — routes from Flask, FastAPI, Django, Express, Rails
 - [x] **CI/CD config parsing** — GitHub Actions, GitLab CI, CircleCI, Jenkinsfile
 - [x] **Database schema** — SQL migrations, ORM models (SQLAlchemy, Prisma, ActiveRecord)
 - [x] **Environment variables consumed** — scan for `os.getenv`, `process.env`, `env!()`

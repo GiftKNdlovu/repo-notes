@@ -13,6 +13,7 @@ class DetectorConfig:
 class ExtractorConfig:
     structure: bool = True
     key_files: bool = True
+    project_intelligence: bool = True
     stats: bool = True
     dependencies: bool = True
     git: bool = True
@@ -26,6 +27,7 @@ class ExtractorConfig:
     type_coverage: bool = True
     complexity: bool = True
     duplicates: bool = True
+    api_endpoints: bool = True
 
 
 @dataclass
@@ -45,7 +47,7 @@ class OutputConfig:
     format: str = "notes"
     order: list[str] = field(default_factory=lambda: [
         "structure",
-        "key_files",
+        "project_intelligence",
         "stats",
         "deps",
         "git",
@@ -59,6 +61,7 @@ class OutputConfig:
         "type_coverage",
         "complexity",
         "duplicates",
+        "api_endpoints",
     ])
 
 
@@ -132,6 +135,7 @@ class Config:
             "extractors": {
                 "structure": self.extractors.structure,
                 "key_files": self.extractors.key_files,
+                "project_intelligence": self.extractors.project_intelligence,
                 "stats": self.extractors.stats,
                 "dependencies": self.extractors.dependencies,
                 "git": self.extractors.git,
@@ -145,6 +149,7 @@ class Config:
                 "type_coverage": self.extractors.type_coverage,
                 "complexity": self.extractors.complexity,
                 "duplicates": self.extractors.duplicates,
+                "api_endpoints": self.extractors.api_endpoints,
             },
             "security": {
                 "entropy_threshold": self.security.entropy_threshold,

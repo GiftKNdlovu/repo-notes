@@ -4,7 +4,7 @@ from io import StringIO
 from pathlib import Path
 from repo_notes.extractors import (
     StructureResult,
-    KeyFilesResult,
+    ProjectIntelligenceResult,
     StatsResult,
     DependenciesResult,
     GitResult,
@@ -18,11 +18,12 @@ from repo_notes.extractors import (
     TypeCoverageResult,
     ComplexityResult,
     DuplicateResult,
+    ApiEndpointResult,
 )
 
 SECTION_NAMES: dict[str, str] = {
     "structure": "Project Structure",
-    "key_files": "Key Files",
+    "project_intelligence": "Project Intelligence",
     "stats": "Code Statistics",
     "deps": "Dependencies",
     "git": "Git Information",
@@ -36,6 +37,7 @@ SECTION_NAMES: dict[str, str] = {
     "type_coverage": "Type Coverage",
     "complexity": "Code Complexity",
     "duplicates": "Duplicate Files",
+    "api_endpoints": "API Endpoints",
 }
 
 
@@ -46,7 +48,7 @@ class MarkdownGenerator:
     def generate(
         self,
         structure: StructureResult | None = None,
-        key_files: KeyFilesResult | None = None,
+        project_intelligence: ProjectIntelligenceResult | None = None,
         stats: StatsResult | None = None,
         deps: DependenciesResult | None = None,
         git: GitResult | None = None,
@@ -55,7 +57,7 @@ class MarkdownGenerator:
         section_order: list[str] | None = None,
     ) -> str:
         buf = StringIO()
-        self._stream_write(buf, section_order=section_order, structure=structure, key_files=key_files, stats=stats, deps=deps, git=git, arch=arch, security=security)
+        self._stream_write(buf, section_order=section_order, structure=structure, project_intelligence=project_intelligence, stats=stats, deps=deps, git=git, arch=arch, security=security)
         output = buf.getvalue()
         return "\n\n".join(s.rstrip() for s in output.split("\n\n") if s.strip()) + "\n"
 
@@ -83,7 +85,7 @@ class MarkdownGenerator:
 
         results_map = {
             "structure": results.get("structure"),
-            "key_files": results.get("key_files"),
+            "project_intelligence": results.get("project_intelligence"),
             "stats": results.get("stats"),
             "deps": results.get("deps"),
             "git": results.get("git") if results.get("git") and getattr(results.get("git"), "is_repo", False) else None,
@@ -97,11 +99,12 @@ class MarkdownGenerator:
             "type_coverage": results.get("type_coverage"),
             "complexity": results.get("complexity"),
             "duplicates": results.get("duplicates"),
+            "api_endpoints": results.get("api_endpoints"),
         }
 
         renderers = {
             "structure": self._render_structure,
-            "key_files": self._render_key_files,
+            "project_intelligence": self._render_project_intelligence,
             "stats": self._render_stats,
             "deps": self._render_dependencies,
             "git": self._render_git,
@@ -115,6 +118,7 @@ class MarkdownGenerator:
             "type_coverage": self._render_type_coverage,
             "complexity": self._render_complexity,
             "duplicates": self._render_duplicates,
+            "api_endpoints": self._render_api_endpoints,
         }
 
         order = results.get("section_order") or list(SECTION_NAMES.keys())
@@ -167,15 +171,43 @@ class MarkdownGenerator:
         lines.append(f"*{result.file_count} files, {result.dir_count} directories*")
         return "\n".join(lines)
 
-    def _render_key_files(self, result: KeyFilesResult) -> str:
-        lines = ["## Key Files", ""]
-        for cat, files in result.categories.items():
-            if not files:
+    def _render_project_intelligence(self, result: ProjectIntelligenceResult) -> str:
+        lines = ["## Project Intelligence", ""]
+
+        by_cat_order = [
+            "Languages", "Frameworks", "Build", "Testing", "Linting",
+            "Database", "Messaging", "Containers", "Cloud",
+            "Monitoring", "Documentation", "Automation", "Mobile", "Utilities",
+        ]
+
+        total = result.total_tools
+        cat_count = len(result.tools)
+        lines.append(f"**{total}** tools detected across **{cat_count}** categories.")
+        lines.append("")
+
+        for cat in by_cat_order:
+            tools = result.tools.get(cat)
+            if not tools:
                 continue
-            lines.append(f"### {cat.replace('_', ' ').title()}")
-            for f in sorted(files):
-                lines.append(f"- `{f}`")
+            lines.append(f"### {cat} ({len(tools)})")
             lines.append("")
+            lines.append("| Tool | Version | Config |")
+            lines.append("|------|---------|--------|")
+            for t in sorted(tools, key=lambda x: x.name.lower()):
+                ver = t.version or "—"
+                cfg = f"`{t.config_file}`" if t.config_file else "—"
+                lines.append(f"| **{t.name}** | {ver} | {cfg} |")
+            lines.append("")
+
+        if result.categories:
+            lines.append("### Key Files")
+            lines.append("")
+            for cat, files in sorted(result.categories.items()):
+                label = cat.replace("_", " ").title()
+                files_str = ", ".join(f"`{f}`" for f in sorted(files))
+                lines.append(f"- **{label}**: {files_str}")
+            lines.append("")
+
         return "\n".join(lines)
 
     def _render_stats(self, result: StatsResult) -> str:
@@ -597,6 +629,29 @@ class MarkdownGenerator:
             lines.append(f"| *...and {len(result.duplicates) - 20} more* | | | |")
         lines.append("")
 
+        return "\n".join(lines)
+
+    def _render_api_endpoints(self, result: ApiEndpointResult) -> str:
+        lines = ["## API Endpoints", ""]
+        if not result.endpoints:
+            lines.append("No API endpoints detected.")
+            return "\n".join(lines)
+
+        by_framework: dict[str, list[dict]] = {}
+        for ep in result.endpoints:
+            by_framework.setdefault(ep["framework"], []).append(ep)
+
+        for framework in ["FastAPI", "Flask", "Django", "Express", "Rails"]:
+            fw_eps = by_framework.get(framework)
+            if not fw_eps:
+                continue
+            lines.append(f"### {framework} ({len(fw_eps)} endpoints)")
+            lines.append("")
+            lines.append("| Method | Path | File | Line |")
+            lines.append("|--------|------|------|------|")
+            for ep in sorted(fw_eps, key=lambda x: (x["path"], x["method"])):
+                lines.append(f"| {ep['method']} | `{ep['path']}` | `{ep['file']}` | {ep['line']} |")
+            lines.append("")
         return "\n".join(lines)
 
     def _format_size(self, size: int) -> str:
