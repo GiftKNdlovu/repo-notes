@@ -21,6 +21,11 @@ class ExtractorConfig:
     todos: bool = True
     scripts: bool = True
     env_vars: bool = True
+    cicd: bool = True
+    database: bool = True
+    type_coverage: bool = True
+    complexity: bool = True
+    duplicates: bool = True
 
 
 @dataclass
@@ -49,6 +54,11 @@ class OutputConfig:
         "todos",
         "scripts",
         "env_vars",
+        "cicd",
+        "database",
+        "type_coverage",
+        "complexity",
+        "duplicates",
     ])
 
 
@@ -130,6 +140,11 @@ class Config:
                 "todos": self.extractors.todos,
                 "scripts": self.extractors.scripts,
                 "env_vars": self.extractors.env_vars,
+                "cicd": self.extractors.cicd,
+                "database": self.extractors.database,
+                "type_coverage": self.extractors.type_coverage,
+                "complexity": self.extractors.complexity,
+                "duplicates": self.extractors.duplicates,
             },
             "security": {
                 "entropy_threshold": self.security.entropy_threshold,

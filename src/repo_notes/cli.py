@@ -22,6 +22,11 @@ from repo_notes.extractors import (
     TodosExtractor,
     ScriptsExtractor,
     EnvVarsExtractor,
+    CicdExtractor,
+    DatabaseExtractor,
+    TypeCoverageExtractor,
+    ComplexityExtractor,
+    DuplicateExtractor,
 )
 from repo_notes.generator import MarkdownGenerator
 from repo_notes.readme_generator import ReadmeGenerator
@@ -286,6 +291,16 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
             extractors.append(("scripts", ScriptsExtractor(), files))
         if cfg.extractors.env_vars:
             extractors.append(("env_vars", EnvVarsExtractor(), files))
+        if cfg.extractors.cicd:
+            extractors.append(("cicd", CicdExtractor(), files))
+        if cfg.extractors.database:
+            extractors.append(("database", DatabaseExtractor(), files))
+        if cfg.extractors.type_coverage:
+            extractors.append(("type_coverage", TypeCoverageExtractor(), files))
+        if cfg.extractors.complexity:
+            extractors.append(("complexity", ComplexityExtractor(), files))
+        if cfg.extractors.duplicates:
+            extractors.append(("duplicates", DuplicateExtractor(), files))
         # README data always extracted
         extractors.append(("readme", ReadmeDataExtractor(), files))
 

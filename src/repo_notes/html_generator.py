@@ -14,6 +14,11 @@ from repo_notes.extractors import (
     TodosResult,
     ScriptsResult,
     EnvVarsResult,
+    CicdResult,
+    DatabaseResult,
+    TypeCoverageResult,
+    ComplexityResult,
+    DuplicateResult,
 )
 
 SECTION_NAMES: dict[str, tuple[str, str]] = {
@@ -27,6 +32,11 @@ SECTION_NAMES: dict[str, tuple[str, str]] = {
     "todos": ("📝", "TODO / FIXME / HACK"),
     "scripts": ("🔧", "Build Scripts"),
     "env_vars": ("🌐", "Environment Variables"),
+    "cicd": ("⚙️", "CI/CD Configuration"),
+    "database": ("🗄️", "Database Schema"),
+    "type_coverage": ("📋", "Type Coverage"),
+    "complexity": ("🔍", "Code Complexity"),
+    "duplicates": ("📑", "Duplicate Files"),
 }
 
 
@@ -71,6 +81,11 @@ class HtmlGenerator:
             "todos": results.get("todos"),
             "scripts": results.get("scripts"),
             "env_vars": results.get("env_vars"),
+            "cicd": results.get("cicd"),
+            "database": results.get("database"),
+            "type_coverage": results.get("type_coverage"),
+            "complexity": results.get("complexity"),
+            "duplicates": results.get("duplicates"),
         }
 
         renderers = {
@@ -84,6 +99,11 @@ class HtmlGenerator:
             "todos": self._render_todos,
             "scripts": self._render_scripts,
             "env_vars": self._render_env_vars,
+            "cicd": self._render_cicd,
+            "database": self._render_database,
+            "type_coverage": self._render_type_coverage,
+            "complexity": self._render_complexity,
+            "duplicates": self._render_duplicates,
         }
 
         order = results.get("section_order") or list(SECTION_NAMES.keys())
@@ -419,6 +439,109 @@ class HtmlGenerator:
             f"<div class='table-wrap'><table><thead><tr><th>Variable</th><th>Files</th></tr></thead>"
             f"<tbody>{rows}</tbody></table></div>"
         )
+
+    def _render_cicd(self, result: CicdResult) -> str:
+        parts = []
+        if result.github_actions:
+            items = ""
+            for wf in result.github_actions:
+                on = ", ".join(wf["on"]) if isinstance(wf["on"], list) else str(wf["on"])
+                jobs = ", ".join(wf["jobs"][:8])
+                if len(wf["jobs"]) > 8:
+                    jobs += ", ..."
+                items += f"<li><strong>{self._escape(wf['name'])}</strong> — on {on}<br><small>Jobs: {jobs}</small></li>"
+            parts.append(f"<details class='collapse' open><summary>GitHub Actions ({len(result.github_actions)} workflows)</summary><ul class='file-list'>{items}</ul></details>")
+        if result.gitlab_ci:
+            stages = sorted(set(j["stage"] for j in result.gitlab_ci))
+            items = "".join(
+                f"<li><strong>{self._escape(j['name'])}</strong> (stage: {j['stage']}){(' <code>' + self._escape(j['image']) + '</code>') if j['image'] else ''}</li>"
+                for j in result.gitlab_ci
+            )
+            parts.append(f"<details class='collapse' open><summary>GitLab CI — Stages: {', '.join(stages)} ({len(result.gitlab_ci)} jobs)</summary><ul class='file-list'>{items}</ul></details>")
+        if result.circleci:
+            items = "".join(f"<li><strong>{self._escape(j['name'])}</strong> — {j['steps']} steps</li>" for j in result.circleci)
+            parts.append(f"<details class='collapse' open><summary>CircleCI ({len(result.circleci)} jobs)</summary><ul class='file-list'>{items}</ul></details>")
+        if result.jenkins_stages:
+            items = "".join(f"<li>{self._escape(s)}</li>" for s in result.jenkins_stages)
+            parts.append(f"<details class='collapse' open><summary>Jenkins Pipeline ({len(result.jenkins_stages)} stages)</summary><ul class='file-list'>{items}</ul></details>")
+        if not parts:
+            return "<p>No CI/CD configuration found.</p>"
+        return "".join(parts)
+
+    def _render_database(self, result: DatabaseResult) -> str:
+        parts = []
+        if result.orm_types:
+            items = "".join(f"<li>{self._escape(t)}</li>" for t in result.orm_types)
+            parts.append(f"<details class='collapse' open><summary>Detected ORM ({len(result.orm_types)})</summary><ul class='file-list'>{items}</ul></details>")
+        if result.model_count:
+            parts.append(f"<p><strong>{result.model_count}</strong> models across {len(result.model_files)} files</p>")
+        if result.migration_files:
+            items = "".join(f"<li><code>{self._escape(str(m))}</code></li>" for m in result.migration_files[:15])
+            if len(result.migration_files) > 15:
+                items += f"<li><em>...and {len(result.migration_files) - 15} more</em></li>"
+            parts.append(f"<details class='collapse' open><summary>Migration Files ({len(result.migration_files)})</summary><ul class='file-list'>{items}</ul></details>")
+        if result.schema_files:
+            items = "".join(f"<li><code>{self._escape(str(s))}</code></li>" for s in result.schema_files)
+            parts.append(f"<details class='collapse' open><summary>Schema Files ({len(result.schema_files)})</summary><ul class='file-list'>{items}</ul></details>")
+        if result.model_files:
+            items = "".join(f"<li><code>{self._escape(str(m))}</code></li>" for m in result.model_files[:15])
+            if len(result.model_files) > 15:
+                items += f"<li><em>...and {len(result.model_files) - 15} more</em></li>"
+            parts.append(f"<details class='collapse' open><summary>Model Files ({len(result.model_files)})</summary><ul class='file-list'>{items}</ul></details>")
+        if not parts:
+            return "<p>No database schema detected.</p>"
+        return "".join(parts)
+
+    def _render_type_coverage(self, result: TypeCoverageResult) -> str:
+        total = result.typed_files + result.untyped_files
+        if total == 0:
+            return "<p>No typed or untyped files found.</p>"
+        pct = round(result.typed_files / total * 100, 1) if total else 0
+        html = f"""
+<div class='stats-grid' style='grid-template-columns:repeat(auto-fit,minmax(140px,1fr))'>
+  <div class='stat-card'><div class='stat-value'>{pct}%</div><div class='stat-label'>Typed</div></div>
+  <div class='stat-card'><div class='stat-value'>{result.typed_files}</div><div class='stat-label'>Typed Files</div></div>
+  <div class='stat-card'><div class='stat-value'>{result.untyped_files}</div><div class='stat-label'>Untyped Files</div></div>
+  <div class='stat-card'><div class='stat-value'>{result.typed_lines:,}</div><div class='stat-label'>Typed Lines</div></div>
+</div>"""
+        if result.by_extension:
+            rows = "".join(
+                f"<tr><td>{ext}</td><td style='text-align:right'>{d['files']}</td><td style='text-align:right'>{d['typed_lines']:,}</td><td style='text-align:right'>{d['untyped_lines']:,}</td></tr>"
+                for ext, d in sorted(result.by_extension.items())
+            )
+            html += f"<details class='collapse' open><summary>By Extension ({len(result.by_extension)})</summary><div class='table-wrap'><table><thead><tr><th>Extension</th><th>Files</th><th>Typed Lines</th><th>Untyped Lines</th></tr></thead><tbody>{rows}</tbody></table></div></details>"
+        return html
+
+    def _render_complexity(self, result: ComplexityResult) -> str:
+        html = f"""
+<div class='stats-grid' style='grid-template-columns:repeat(auto-fit,minmax(180px,1fr))'>
+  <div class='stat-card'><div class='stat-value'>{result.avg_function_length}</div><div class='stat-label'>Avg Function Lines</div></div>
+  <div class='stat-card'><div class='stat-value'>{result.max_nesting}</div><div class='stat-label'>Max Nesting</div></div>
+</div>"""
+        if result.complex_files:
+            rows = "".join(
+                f"<tr><td><code>{self._escape(e['file'])}</code></td><td style='text-align:right'>{len(e['long_functions'])}</td><td style='text-align:right'>{e['max_nesting']}</td><td style='text-align:right'>{e['score']}</td></tr>"
+                for e in result.complex_files
+            )
+            html += f"<details class='collapse' open><summary>Complex Files ({len(result.complex_files)})</summary><div class='table-wrap'><table><thead><tr><th>File</th><th>Long Functions</th><th>Max Nesting</th><th>Score</th></tr></thead><tbody>{rows}</tbody></table></div></details>"
+        else:
+            html += "<p>No complex files detected.</p>"
+        return html
+
+    def _render_duplicates(self, result: DuplicateResult) -> str:
+        if result.total_duplicates == 0:
+            return "<p>No duplicate files found.</p>"
+        html = f"<p><strong>{result.total_duplicates}</strong> duplicate file(s) found"
+        if result.total_saved_bytes:
+            html += f", <strong>{self._format_size(result.total_saved_bytes)}</strong> could be saved"
+        html += "</p>"
+        if result.duplicates:
+            rows = "".join(
+                f"<tr><td><code>{self._escape(d['file'])}</code></td><td><code>{self._escape(d['duplicate_of'])}</code></td><td>{self._format_size(d['size'])}</td><td>{d['similarity']*100:.0f}%</td></tr>"
+                for d in result.duplicates[:20]
+            )
+            html += f"<div class='table-wrap'><table><thead><tr><th>Duplicate File</th><th>Original</th><th>Size</th><th>Similarity</th></tr></thead><tbody>{rows}</tbody></table></div>"
+        return html
 
     def _describe_dep(self, val) -> str:
         if isinstance(val, dict):

@@ -4,7 +4,7 @@ Scan any code repository and generate comprehensive project notes, including cod
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.10-yellow)
-![Tests](https://img.shields.io/badge/tests-152%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-178%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Quick Start
@@ -51,7 +51,7 @@ This creates `REPO_NOTES.md` with all available information about the project.
 
 ## Output Sections
 
-Once generated, the notes contain up to 10 sections:
+Once generated, the notes contain up to 15 sections:
 
 ### 1. Project Structure
 Directory tree of the project with file/directory counts. Respects `.gitignore` and excludes common build artifacts by default. Depth configurable via `--max-depth`.
@@ -102,6 +102,39 @@ Scans all files for environment variable access patterns:
 
 Shows each unique variable name and which files reference it.
 
+### 11. CI/CD Configuration
+Parses CI/CD pipeline definitions:
+- **GitHub Actions**: workflows in `.github/workflows/` — shows trigger events, job names, runner images
+- **GitLab CI**: `.gitlab-ci.yml` — stages, job names, images
+- **CircleCI**: `.circleci/config.yml` — jobs with step counts
+- **Jenkins**: `Jenkinsfile` — pipeline stage names
+
+### 12. Database Schema
+Detects database-related files and ORM usage:
+- **Migration files**: directories named `migrations/`, `alembic/`, `db/migrate/`, `prisma/`
+- **ORM detection**: SQLAlchemy, Django, Prisma, ActiveRecord via content patterns
+- **Schema files**: `schema.prisma`, `schema.rb`, `models.py`
+
+### 13. Type Coverage
+Estimates type coverage across the codebase:
+- **Python**: checks function signatures for type hints (`def f(x: int) -> str`)
+- **TypeScript**: fully typed by extension
+- **JavaScript**: untyped by extension
+- Shows typed vs untyped file and line counts per extension
+
+### 14. Code Complexity
+Identifies complex code using static heuristics:
+- **Function length**: counts lines within function boundaries (detected via regex)
+- **Nesting depth**: tracks brace/indent nesting per file
+- **Score**: weighted combination of long functions and nesting
+- Lists files exceeding configurable complexity thresholds
+
+### 15. Duplicate Files
+Finds exact duplicate files via SHA-256 content hashing:
+- Groups files by size, hashes each group, reports exact duplicates
+- Shows wasted bytes and similarity percentage
+- Skips binary files
+
 ## Performance Features
 
 - **Parallel scanning**: Directory walk uses `os.scandir` (zero-stat traversal) with per-file processing distributed across a thread pool
@@ -139,6 +172,11 @@ extractors:
   todos: true
   scripts: true
   env_vars: true
+  cicd: true
+  database: true
+  type_coverage: true
+  complexity: true
+  duplicates: true
 
 # Security scanner options
 security:
@@ -164,6 +202,11 @@ output:
     - todos
     - scripts
     - env_vars
+    - cicd
+    - database
+    - type_coverage
+    - complexity
+    - duplicates
 ```
 
 The `output.order` list lets you reorder sections arbitrarily. Any section without data is automatically omitted.
@@ -226,6 +269,11 @@ src/repo_notes/
     ├── todos.py
     ├── scripts.py
     ├── env_vars.py
+    ├── cicd.py
+    ├── database.py
+    ├── type_coverage.py
+    ├── complexity.py
+    ├── duplicates.py
     └── readme_data.py
 tests/
 ├── test_scanner.py
@@ -238,7 +286,12 @@ tests/
 ├── test_detectors.py
 ├── test_todos_extractor.py
 ├── test_scripts_extractor.py
-└── test_env_vars_extractor.py
+├── test_env_vars_extractor.py
+├── test_cicd_extractor.py
+├── test_database_extractor.py
+├── test_type_coverage_extractor.py
+├── test_complexity_extractor.py
+└── test_duplicates_extractor.py
 benchmarks/
 └── benchmark.py
 ```
