@@ -73,3 +73,93 @@ def test_tag_case_insensitive(tmp_path: Path):
     result = TodosExtractor().extract(tmp_path, files)
     assert len(result.items) == 1
     assert result.items[0]["tag"] == "TODO"
+
+
+def test_ignores_code_strings(tmp_path: Path):
+    f = tmp_path / "main.py"
+    f.write_text('print("TODO: this is a string, not a comment")\n')
+    files = [FileInfo(f, Path("main.py"), 50, ".py", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert result.items == []
+
+
+def test_ignores_documentation_files(tmp_path: Path):
+    f = tmp_path / "README.md"
+    f.write_text("# TODO: this is documentation text\n")
+    files = [FileInfo(f, Path("README.md"), 40, ".md", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert result.items == []
+
+
+def test_ignores_json_files(tmp_path: Path):
+    f = tmp_path / "package.json"
+    f.write_text('{"scripts": {"test": "jest TODO"}}\n')
+    files = [FileInfo(f, Path("package.json"), 40, ".json", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert result.items == []
+
+
+def test_detects_js_comment(tmp_path: Path):
+    f = tmp_path / "app.js"
+    f.write_text("// TODO: fix this later\n")
+    files = [FileInfo(f, Path("app.js"), 30, ".js", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+    assert result.items[0]["tag"] == "TODO"
+
+
+def test_detects_block_comment(tmp_path: Path):
+    f = tmp_path / "app.js"
+    f.write_text("/* TODO: inside block comment */\n")
+    files = [FileInfo(f, Path("app.js"), 40, ".js", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+
+
+def test_detects_continuation_comment(tmp_path: Path):
+    f = tmp_path / "app.js"
+    f.write_text(" * TODO: continuation line\n")
+    files = [FileInfo(f, Path("app.js"), 35, ".js", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+
+
+def test_detects_html_comment(tmp_path: Path):
+    f = tmp_path / "index.html"
+    f.write_text("<!-- TODO: add content -->\n")
+    files = [FileInfo(f, Path("index.html"), 30, ".html", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+
+
+def test_detects_sql_comment(tmp_path: Path):
+    f = tmp_path / "query.sql"
+    f.write_text("SELECT * FROM users -- TODO: add WHERE clause\n")
+    files = [FileInfo(f, Path("query.sql"), 50, ".sql", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+
+
+def test_detects_yaml_comment(tmp_path: Path):
+    f = tmp_path / "config.yml"
+    f.write_text("# TODO: add more settings\n")
+    files = [FileInfo(f, Path("config.yml"), 35, ".yml", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+
+
+def test_detects_dockerfile_comment(tmp_path: Path):
+    f = tmp_path / "Dockerfile"
+    f.write_text("# TODO: optimize layers\n")
+    files = [FileInfo(f, Path("Dockerfile"), 25, "", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert len(result.items) == 1
+
+
+def test_ignores_code_without_comment_prefix(tmp_path: Path):
+    f = tmp_path / "app.js"
+    f.write_text('const TODO = "not a comment";\n')
+    files = [FileInfo(f, Path("app.js"), 35, ".js", False)]
+    result = TodosExtractor().extract(tmp_path, files)
+    assert result.items == []
+
