@@ -1,7 +1,8 @@
 """Tests for the API endpoint extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.api_endpoints import ApiEndpointExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

@@ -1,12 +1,13 @@
 """Tests for the Project Intelligence extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.project_intelligence import (
     ProjectIntelligenceExtractor,
+    _extract_versions_from_package_json,
     _extract_versions_from_pyproject,
     _extract_versions_from_requirements,
-    _extract_versions_from_package_json,
 )
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():
@@ -85,7 +86,7 @@ def test_detects_version_from_requirements():
     assert versions.get("pytest") == "==7.4.0"
 
 
-def test_detects_version_from_package_json():
+def test_extract_versions_from_package_json_direct():
     versions = _extract_versions_from_package_json('{"dependencies": {"express": "^4.18.0"}}')
     assert versions.get("express") == "^4.18.0"
 

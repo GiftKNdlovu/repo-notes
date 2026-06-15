@@ -3,8 +3,9 @@
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.file_cache import read_text
+from repo_notes.scanner import FileInfo
 
 ENV_PATTERNS = [
     # Python: os.getenv("VAR"), os.environ.get("VAR"), os.environ["VAR"]

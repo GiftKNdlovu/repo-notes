@@ -2,9 +2,9 @@
 
 Scan any code repository and generate comprehensive project notes, including code statistics, git history, security scans, architecture analysis, and more.
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.10-yellow)
-![Tests](https://img.shields.io/badge/tests-178%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-205%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Quick Start
@@ -47,17 +47,27 @@ This creates `REPO_NOTES.md` with all available information about the project.
 | `-q, --quiet` | Suppress progress output (for CI) |
 | `--no-cache` | Bypass incremental cache, force full re-scan |
 | `--init` | Generate a `.repo-notes.yaml` template |
+| `--version` | Show version and exit |
 | `--help` | Show help message |
 
 ## Output Sections
 
-Once generated, the notes contain up to 15 sections:
+Once generated, the notes contain up to 16 sections:
 
 ### 1. Project Structure
 Directory tree of the project with file/directory counts. Respects `.gitignore` and excludes common build artifacts by default. Depth configurable via `--max-depth`.
 
-### 2. Key Files
-Detects important project files automatically: README, LICENSE, CHANGELOG, CONTRIBUTING, CI configs (GitHub Actions, GitLab CI, CircleCI, etc.), Docker files, config files, and entry points.
+### 2. Project Intelligence
+Smart detection of tools, frameworks, libraries, and configs by both filename and file **content**. Detects 80+ tools across 14 categories:
+- **Languages**: Python, JavaScript, TypeScript, Go, Rust, Ruby, Java, Kotlin, Swift, PHP
+- **Frameworks**: FastAPI, Flask, Django, Express, Next.js, React, Vue, Angular, Svelte, Rails, Spring Boot, Gin, Echo, Fiber, Actix-web, Axum
+- **Build Tools**: Webpack, Vite, esbuild, Rollup, Parcel, Make, CMake, Bazel, Gradle, Maven, Cargo, TSC, Babel, Poetry, Yarn, pnpm
+- **Testing**: pytest, jest, vitest, mocha, playwright, cypress, rspec, junit, robot framework, selenium
+- **Linting**: ESLint, Prettier, Ruff, Black, Flake8, isort, MyPy, Pylint, RuboCop, Clippy
+- **Database**: Prisma, Alembic, Flyway, Liquibase, Sequelize, TypeORM, Drizzle, Redis, MongoDB, PostgreSQL
+- **plus** Messaging, Containers, Cloud, Monitoring, Documentation, Automation, Mobile, Utilities
+
+Extracts **version numbers** from `package.json`, `pyproject.toml`, `requirements.txt`, `Cargo.toml`, `go.mod`, and `Gemfile`.
 
 ### 3. Code Statistics
 Total files, lines of code, size breakdown by language. Supports 10+ languages with automatic detection. Shows largest files and language distribution tables.
@@ -73,17 +83,17 @@ Extracts dependencies from:
 Shows current branch, remote URL, recent commits, all branches, and top contributors. Only appears when run inside a git repository.
 
 ### 6. Architecture Overview
-Detects application layers (entry points, models, controllers, views, routes, middleware, services, config, tests, migrations) by analyzing file paths and naming conventions.
+Detects application layers (entry points, models, controllers, views, routes, middleware, services, config, tests, migrations) by analyzing file paths and naming conventions. Extracts import graphs for Python, JavaScript/TypeScript, Go, and Rust.
 
 ### 7. Security Notes
 Scans for potential secrets and sensitive files:
-- **High severity**: Pattern-matched secrets (AWS keys, GitHub tokens, database URLs, private keys, JWT secrets)
+- **High severity**: Pattern-matched secrets (AWS keys, GitHub tokens, database URLs, private keys, JWT secrets, 12+ AI API key patterns)
 - **Mild severity**: High-entropy strings that may contain secrets
 - **Custom patterns**: User-defined regex patterns via `security.patterns` in config
 - Environment files (`.env*`) are flagged with warnings
 
 ### 8. TODO / FIXME / HACK
-Scans all non-binary files for developer comments tagged with `TODO`, `FIXME`, `HACK`, `XXX`, `BUG`, `WORKAROUND`, or `HACKME`. Shows file, line number, and the comment message.
+Scans all source files for developer comments tagged with `TODO`, `FIXME`, `HACK`, `XXX`, `BUG`, `WORKAROUND`, or `HACKME`. **Comment-context-aware** — only matches tags inside actual comments (`#`, `//`, `/*`, `--`, `<!--`), not inside string literals or documentation prose. Skips markdown, JSON, and plain-text files entirely.
 
 ### 9. Build Scripts
 Extracts executable targets from:
@@ -99,8 +109,6 @@ Scans all files for environment variable access patterns:
 - **Rust**: `env!("VAR")`
 - **Shell**: `$VAR`, `${VAR}`
 - **Generic**: `getenv("VAR")` calls
-
-Shows each unique variable name and which files reference it.
 
 ### 11. CI/CD Configuration
 Parses CI/CD pipeline definitions:
@@ -127,13 +135,20 @@ Identifies complex code using static heuristics:
 - **Function length**: counts lines within function boundaries (detected via regex)
 - **Nesting depth**: tracks brace/indent nesting per file
 - **Score**: weighted combination of long functions and nesting
-- Lists files exceeding configurable complexity thresholds
 
 ### 15. Duplicate Files
 Finds exact duplicate files via SHA-256 content hashing:
 - Groups files by size, hashes each group, reports exact duplicates
 - Shows wasted bytes and similarity percentage
 - Skips binary files
+
+### 16. API Endpoints
+Detects API routes from common frameworks:
+- **Flask**: `@app.route(...)`, `@blueprint.route(...)`
+- **FastAPI**: `@app.get(...)`, `@app.post(...)`, etc.
+- **Django**: `path(...)` in `urls.py`
+- **Express**: `app.get(...)`, `router.post(...)`, etc.
+- **Rails**: `get 'path'`, `resources :model` in `config/routes.rb`
 
 ## Performance Features
 
@@ -163,7 +178,7 @@ min_file_size: 0
 # Which extractors to run
 extractors:
   structure: true
-  key_files: true
+  project_intelligence: true
   stats: true
   dependencies: true
   git: true
@@ -177,6 +192,7 @@ extractors:
   type_coverage: true
   complexity: true
   duplicates: true
+  api_endpoints: true
 
 # Security scanner options
 security:
@@ -193,7 +209,7 @@ output:
   format: notes  # notes, readme, both, html, or json
   order:
     - structure
-    - key_files
+    - project_intelligence
     - stats
     - deps
     - git
@@ -207,6 +223,7 @@ output:
     - type_coverage
     - complexity
     - duplicates
+    - api_endpoints
 ```
 
 The `output.order` list lets you reorder sections arbitrarily. Any section without data is automatically omitted.
@@ -260,7 +277,7 @@ src/repo_notes/
 │   └── ... (10 languages)
 └── extractors/          # Data extractors
     ├── structure.py
-    ├── key_files.py
+    ├── project_intelligence.py
     ├── stats.py
     ├── dependencies.py
     ├── git.py
@@ -273,6 +290,9 @@ src/repo_notes/
     ├── database.py
     ├── type_coverage.py
     ├── complexity.py
+    ├── duplicates.py
+    ├── api_endpoints.py
+    └── readme_data.py
     ├── duplicates.py
     └── readme_data.py
 tests/
@@ -291,7 +311,9 @@ tests/
 ├── test_database_extractor.py
 ├── test_type_coverage_extractor.py
 ├── test_complexity_extractor.py
-└── test_duplicates_extractor.py
+├── test_duplicates_extractor.py
+├── test_api_endpoints_extractor.py
+└── test_project_intelligence_extractor.py
 benchmarks/
 └── benchmark.py
 ```

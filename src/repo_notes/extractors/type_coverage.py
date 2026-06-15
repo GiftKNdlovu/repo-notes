@@ -3,9 +3,9 @@
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from repo_notes.scanner import FileInfo
-from repo_notes.file_cache import read_text
 
+from repo_notes.file_cache import read_text
+from repo_notes.scanner import FileInfo
 
 # Languages always considered fully typed
 FULLY_TYPED = {"go", "rust", "kotlin", "java", "swift", "scala"}
@@ -51,7 +51,6 @@ class TypeCoverageExtractor:
         return result
 
     def _is_typed(self, f: FileInfo, content: str) -> bool:
-        ext = f.extension
         lang = f.relative_path.suffix.lower()
 
         if lang in (".py",):

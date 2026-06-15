@@ -1,6 +1,7 @@
 """README.md generator."""
 
 from pathlib import Path
+
 from repo_notes.extractors.readme_data import ReadmeData
 from repo_notes.extractors.stats import StatsResult
 

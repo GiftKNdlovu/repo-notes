@@ -1,7 +1,8 @@
 """Tests for the code complexity extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.complexity import ComplexityExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

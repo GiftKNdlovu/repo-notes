@@ -2,7 +2,6 @@
 
 from .base import ExtensionDetector, LanguageInfo
 
-
 GO_INFO = LanguageInfo(
     name="go",
     category="backend",

@@ -3,36 +3,37 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+
 import click
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 
+from repo_notes import __version__
 from repo_notes.cache import CacheManager
 from repo_notes.config import Config
-from repo_notes.scanner import scan_directory
 from repo_notes.extractors import (
-    StructureExtractor,
-    KeyFilesExtractor,
-    ProjectIntelligenceExtractor,
-    StatsExtractor,
-    DependenciesExtractor,
-    GitExtractor,
-    ArchitectureExtractor,
-    SecurityExtractor,
-    ReadmeDataExtractor,
-    TodosExtractor,
-    ScriptsExtractor,
-    EnvVarsExtractor,
-    CicdExtractor,
-    DatabaseExtractor,
-    TypeCoverageExtractor,
-    ComplexityExtractor,
-    DuplicateExtractor,
     ApiEndpointExtractor,
+    ArchitectureExtractor,
+    CicdExtractor,
+    ComplexityExtractor,
+    DatabaseExtractor,
+    DependenciesExtractor,
+    DuplicateExtractor,
+    EnvVarsExtractor,
+    GitExtractor,
+    ProjectIntelligenceExtractor,
+    ReadmeDataExtractor,
+    ScriptsExtractor,
+    SecurityExtractor,
+    StatsExtractor,
+    StructureExtractor,
+    TodosExtractor,
+    TypeCoverageExtractor,
 )
 from repo_notes.generator import MarkdownGenerator
-from repo_notes.readme_generator import ReadmeGenerator
 from repo_notes.html_generator import HtmlGenerator
+from repo_notes.readme_generator import ReadmeGenerator
+from repo_notes.scanner import scan_directory
 
 console = Console()
 
@@ -55,7 +56,6 @@ INIT_TEMPLATE = """# repo-notes configuration
 
 # extractors:
 #   structure: true
-#   key_files: true
 #   stats: true
 #   dependencies: true
 #   git: true
@@ -83,7 +83,6 @@ INIT_TEMPLATE = """# repo-notes configuration
 #   format: notes  # notes, readme, both, html, or json
 #   order:
 #     - structure
-#     - key_files
 #     - stats
 #     - deps
 #     - git
@@ -140,6 +139,7 @@ def _find_git_root(path: Path) -> Path | None:
 
 
 @click.command()
+@click.version_option(__version__)
 @click.argument(
     "path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
@@ -287,7 +287,7 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
 
         if cfg.extractors.structure:
             extractors.append(("structure", StructureExtractor(max_depth=cfg.structure.max_depth), files))
-        if cfg.extractors.key_files or cfg.extractors.project_intelligence:
+        if cfg.extractors.project_intelligence:
             extractors.append(("project_intelligence", ProjectIntelligenceExtractor(), files))
         if cfg.extractors.stats:
             extractors.append(("stats", StatsExtractor(), files))

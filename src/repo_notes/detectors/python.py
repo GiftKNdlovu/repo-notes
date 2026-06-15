@@ -2,7 +2,6 @@
 
 from .base import ExtensionDetector, LanguageInfo
 
-
 PYTHON_INFO = LanguageInfo(
     name="python",
     category="backend",

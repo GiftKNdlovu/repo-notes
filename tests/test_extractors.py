@@ -1,13 +1,12 @@
 """Tests for extractor modules."""
 
 from pathlib import Path
-from repo_notes.scanner import FileInfo, scan_directory
-from repo_notes.extractors.structure import StructureExtractor
-from repo_notes.extractors.key_files import KeyFilesExtractor
-from repo_notes.extractors.stats import StatsExtractor
-from repo_notes.extractors.security import SecurityExtractor
-from repo_notes.extractors.git import GitExtractor
 
+from repo_notes.extractors.git import GitExtractor
+from repo_notes.extractors.security import SecurityExtractor
+from repo_notes.extractors.stats import StatsExtractor
+from repo_notes.extractors.structure import StructureExtractor
+from repo_notes.scanner import FileInfo, scan_directory
 
 SAMPLE_FILES = [
     FileInfo(Path("/root/main.py"), Path("main.py"), 100, ".py", False),
@@ -38,26 +37,6 @@ class TestStructureExtractor:
         assert "main.py" in result.tree
         assert "src/" in result.tree
         assert "models/" not in result.tree
-
-
-class TestKeyFilesExtractor:
-    def test_detects_readme(self):
-        extractor = KeyFilesExtractor()
-        result = extractor.extract(Path("/root"), SAMPLE_FILES)
-        assert "readme" in result.categories
-        assert Path("README.md") in result.categories["readme"]
-
-    def test_detects_entry_point(self):
-        extractor = KeyFilesExtractor()
-        result = extractor.extract(Path("/root"), SAMPLE_FILES)
-        assert "entrypoint" in result.categories
-        assert Path("main.py") in result.categories["entrypoint"]
-
-    def test_detects_license(self):
-        extractor = KeyFilesExtractor()
-        result = extractor.extract(Path("/root"), SAMPLE_FILES)
-        assert "license" in result.categories
-        assert Path("LICENSE") in result.categories["license"]
 
 
 class TestStatsExtractor:

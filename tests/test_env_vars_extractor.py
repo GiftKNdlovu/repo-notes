@@ -1,7 +1,8 @@
 """Tests for the environment variables extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.env_vars import EnvVarsExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

@@ -1,11 +1,12 @@
 """Tests for detector modules."""
 
 from pathlib import Path
+
+from repo_notes.detectors.go import GO_INFO, GoDetector
+from repo_notes.detectors.javascript import JS_INFO, JavaScriptDetector
+from repo_notes.detectors.python import PYTHON_INFO, PythonDetector
 from repo_notes.detectors.registry import DetectorRegistry, get_registry
-from repo_notes.detectors.python import PythonDetector, PYTHON_INFO
-from repo_notes.detectors.javascript import JavaScriptDetector, JS_INFO
-from repo_notes.detectors.go import GoDetector, GO_INFO
-from repo_notes.detectors.rust import RustDetector, RUST_INFO
+from repo_notes.detectors.rust import RUST_INFO, RustDetector
 
 
 class TestPythonDetector:

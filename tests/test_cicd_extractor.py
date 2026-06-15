@@ -1,7 +1,8 @@
 """Tests for the CI/CD config extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.cicd import CicdExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

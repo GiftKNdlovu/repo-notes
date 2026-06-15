@@ -1,7 +1,8 @@
 """Tests for the build scripts extractor."""
 from pathlib import Path
-from repo_notes.scanner import FileInfo
+
 from repo_notes.extractors.scripts import ScriptsExtractor
+from repo_notes.scanner import FileInfo
 
 
 def test_empty_project():

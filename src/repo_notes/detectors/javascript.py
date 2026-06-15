@@ -2,7 +2,6 @@
 
 from .base import ExtensionDetector, LanguageInfo
 
-
 JS_INFO = LanguageInfo(
     name="javascript",
     category="frontend",

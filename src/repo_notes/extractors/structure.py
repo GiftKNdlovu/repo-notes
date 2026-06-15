@@ -1,8 +1,9 @@
 """Directory structure extractor."""
 
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from collections import defaultdict
+
 from repo_notes.scanner import FileInfo
 
 

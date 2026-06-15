@@ -1,29 +1,26 @@
 """Extractors package."""
 
-from .structure import StructureExtractor, StructureResult
-from .key_files import KeyFilesExtractor, KeyFilesResult
-from .stats import StatsExtractor, StatsResult
-from .dependencies import DependenciesExtractor, DependenciesResult
-from .git import GitExtractor, GitResult
-from .architecture import ArchitectureExtractor, ArchitectureResult
-from .security import SecurityExtractor, SecurityResult
-from .readme_data import ReadmeDataExtractor, ReadmeData
-from .project_intelligence import ProjectIntelligenceExtractor, ProjectIntelligenceResult
-from .todos import TodosExtractor, TodosResult
-from .scripts import ScriptsExtractor, ScriptsResult
-from .env_vars import EnvVarsExtractor, EnvVarsResult
-from .cicd import CicdExtractor, CicdResult
-from .database import DatabaseExtractor, DatabaseResult
-from .type_coverage import TypeCoverageExtractor, TypeCoverageResult
-from .complexity import ComplexityExtractor, ComplexityResult
-from .duplicates import DuplicateExtractor, DuplicateResult
 from .api_endpoints import ApiEndpointExtractor, ApiEndpointResult
+from .architecture import ArchitectureExtractor, ArchitectureResult
+from .cicd import CicdExtractor, CicdResult
+from .complexity import ComplexityExtractor, ComplexityResult
+from .database import DatabaseExtractor, DatabaseResult
+from .dependencies import DependenciesExtractor, DependenciesResult
+from .duplicates import DuplicateExtractor, DuplicateResult
+from .env_vars import EnvVarsExtractor, EnvVarsResult
+from .git import GitExtractor, GitResult
+from .project_intelligence import ProjectIntelligenceExtractor, ProjectIntelligenceResult
+from .readme_data import ReadmeData, ReadmeDataExtractor
+from .scripts import ScriptsExtractor, ScriptsResult
+from .security import SecurityExtractor, SecurityResult
+from .stats import StatsExtractor, StatsResult
+from .structure import StructureExtractor, StructureResult
+from .todos import TodosExtractor, TodosResult
+from .type_coverage import TypeCoverageExtractor, TypeCoverageResult
 
 __all__ = [
     "StructureExtractor",
     "StructureResult",
-    "KeyFilesExtractor",
-    "KeyFilesResult",
     "StatsExtractor",
     "StatsResult",
     "DependenciesExtractor",

@@ -1,6 +1,7 @@
 """Detector registry for auto-discovery."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -56,7 +57,7 @@ def get_registry() -> DetectorRegistry:
 
 
 def _register_builtin(registry: DetectorRegistry) -> None:
-    from . import python, javascript, go, rust
+    from . import go, javascript, python, rust
     registry.register(python.PythonDetector())
     registry.register(javascript.JavaScriptDetector())
     registry.register(go.GoDetector())
