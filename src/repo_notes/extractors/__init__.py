@@ -11,6 +11,11 @@ from .readme_data import ReadmeDataExtractor, ReadmeData
 from .todos import TodosExtractor, TodosResult
 from .scripts import ScriptsExtractor, ScriptsResult
 from .env_vars import EnvVarsExtractor, EnvVarsResult
+from .cicd import CicdExtractor, CicdResult
+from .database import DatabaseExtractor, DatabaseResult
+from .type_coverage import TypeCoverageExtractor, TypeCoverageResult
+from .complexity import ComplexityExtractor, ComplexityResult
+from .duplicates import DuplicateExtractor, DuplicateResult
 
 __all__ = [
     "StructureExtractor",
@@ -35,4 +40,14 @@ __all__ = [
     "ScriptsResult",
     "EnvVarsExtractor",
     "EnvVarsResult",
+    "CicdExtractor",
+    "CicdResult",
+    "DatabaseExtractor",
+    "DatabaseResult",
+    "TypeCoverageExtractor",
+    "TypeCoverageResult",
+    "ComplexityExtractor",
+    "ComplexityResult",
+    "DuplicateExtractor",
+    "DuplicateResult",
 ]

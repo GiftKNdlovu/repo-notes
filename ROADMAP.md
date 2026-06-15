@@ -35,13 +35,13 @@ Planned features for `repo-notes`, organized by category.
 
 - [x] **TODO/FIXME/HACK extraction** — surface developer comments across all languages
 - [ ] **API endpoint detection** — routes from Flask, FastAPI, Django, Express, Rails
-- [ ] **CI/CD config parsing** — GitHub Actions, GitLab CI, CircleCI, Jenkinsfile
-- [ ] **Database schema** — SQL migrations, ORM models (SQLAlchemy, Prisma, ActiveRecord)
+- [x] **CI/CD config parsing** — GitHub Actions, GitLab CI, CircleCI, Jenkinsfile
+- [x] **Database schema** — SQL migrations, ORM models (SQLAlchemy, Prisma, ActiveRecord)
 - [x] **Environment variables consumed** — scan for `os.getenv`, `process.env`, `env!()`
 - [x] **Scripts section** — `package.json` scripts, Makefile targets, justfile
-- [ ] **Type coverage** — rough estimate of typed vs untyped code (type hints, TypeScript types)
-- [ ] **Code complexity** — cyclomatic complexity per file (long functions, nesting depth)
-- [ ] **Duplicate detection** — near-duplicate file detection via tokens or line hashes
+- [x] **Type coverage** — rough estimate of typed vs untyped code (type hints, TypeScript types)
+- [x] **Code complexity** — cyclomatic complexity per file (long functions, nesting depth)
+- [x] **Duplicate detection** — near-duplicate file detection via tokens or line hashes
 
 ## Architecture Analysis
 

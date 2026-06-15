@@ -13,6 +13,11 @@ from repo_notes.extractors import (
     TodosResult,
     ScriptsResult,
     EnvVarsResult,
+    CicdResult,
+    DatabaseResult,
+    TypeCoverageResult,
+    ComplexityResult,
+    DuplicateResult,
 )
 
 SECTION_NAMES: dict[str, str] = {
@@ -26,6 +31,11 @@ SECTION_NAMES: dict[str, str] = {
     "todos": "TODO / FIXME / HACK",
     "scripts": "Build Scripts",
     "env_vars": "Environment Variables",
+    "cicd": "CI/CD Configuration",
+    "database": "Database Schema",
+    "type_coverage": "Type Coverage",
+    "complexity": "Code Complexity",
+    "duplicates": "Duplicate Files",
 }
 
 
@@ -82,6 +92,11 @@ class MarkdownGenerator:
             "todos": results.get("todos"),
             "scripts": results.get("scripts"),
             "env_vars": results.get("env_vars"),
+            "cicd": results.get("cicd"),
+            "database": results.get("database"),
+            "type_coverage": results.get("type_coverage"),
+            "complexity": results.get("complexity"),
+            "duplicates": results.get("duplicates"),
         }
 
         renderers = {
@@ -95,6 +110,11 @@ class MarkdownGenerator:
             "todos": self._render_todos,
             "scripts": self._render_scripts,
             "env_vars": self._render_env_vars,
+            "cicd": self._render_cicd,
+            "database": self._render_database,
+            "type_coverage": self._render_type_coverage,
+            "complexity": self._render_complexity,
+            "duplicates": self._render_duplicates,
         }
 
         order = results.get("section_order") or list(SECTION_NAMES.keys())
@@ -421,6 +441,162 @@ class MarkdownGenerator:
         if len(result.variables) > 40:
             lines.append(f"| *...and {len(result.variables) - 40} more* | |")
         lines.append("")
+        return "\n".join(lines)
+
+    def _render_cicd(self, result: CicdResult) -> str:
+        lines = ["## CI/CD Configuration", ""]
+        has_any = False
+
+        if result.github_actions:
+            has_any = True
+            lines.append("### GitHub Actions")
+            for wf in result.github_actions:
+                on = ", ".join(wf["on"]) if isinstance(wf["on"], list) else wf["on"]
+                jobs = ", ".join(wf["jobs"][:8])
+                if len(wf["jobs"]) > 8:
+                    jobs += f", ..."
+                lines.append(f"- **{wf['name']}** — on {on}")
+                lines.append(f"  - Jobs: {jobs}")
+            lines.append("")
+
+        if result.gitlab_ci:
+            has_any = True
+            stages = set(j["stage"] for j in result.gitlab_ci)
+            lines.append(f"### GitLab CI — Stages: {', '.join(sorted(stages))}")
+            for job in result.gitlab_ci:
+                img = f" ({job['image']})" if job["image"] else ""
+                lines.append(f"- **{job['name']}** (stage: {job['stage']}){img}")
+            lines.append("")
+
+        if result.circleci:
+            has_any = True
+            lines.append("### CircleCI Jobs")
+            for job in result.circleci:
+                lines.append(f"- **{job['name']}** — {job['steps']} steps")
+            lines.append("")
+
+        if result.jenkins_stages:
+            has_any = True
+            lines.append("### Jenkins Pipeline Stages")
+            for s in result.jenkins_stages:
+                lines.append(f"- {s}")
+            lines.append("")
+
+        if not has_any:
+            lines.append("No CI/CD configuration found.")
+        return "\n".join(lines)
+
+    def _render_database(self, result: DatabaseResult) -> str:
+        lines = ["## Database Schema", ""]
+        has_any = False
+
+        if result.orm_types:
+            has_any = True
+            lines.append("### Detected ORM")
+            for t in result.orm_types:
+                lines.append(f"- **{t}**")
+            lines.append("")
+
+        if result.model_count:
+            has_any = True
+            lines.append(f"- **{result.model_count}** models across {len(result.model_files)} files")
+            lines.append("")
+
+        if result.migration_files:
+            has_any = True
+            lines.append(f"### Migration Files ({len(result.migration_files)})")
+            for m in result.migration_files[:15]:
+                lines.append(f"- `{m}`")
+            if len(result.migration_files) > 15:
+                lines.append(f"- *...and {len(result.migration_files) - 15} more*")
+            lines.append("")
+
+        if result.schema_files:
+            has_any = True
+            lines.append("### Schema Files")
+            for s in result.schema_files:
+                lines.append(f"- `{s}`")
+            lines.append("")
+
+        if result.model_files:
+            has_any = True
+            lines.append(f"### Model Files ({len(result.model_files)})")
+            for m in result.model_files[:15]:
+                lines.append(f"- `{m}`")
+            if len(result.model_files) > 15:
+                lines.append(f"- *...and {len(result.model_files) - 15} more*")
+            lines.append("")
+
+        if not has_any:
+            lines.append("No database schema detected.")
+        return "\n".join(lines)
+
+    def _render_type_coverage(self, result: TypeCoverageResult) -> str:
+        lines = ["## Type Coverage", ""]
+        if result.typed_files == 0 and result.untyped_files == 0:
+            lines.append("No typed or untyped files found.")
+            return "\n".join(lines)
+
+        total = result.typed_files + result.untyped_files
+        pct = round(result.typed_files / total * 100, 1) if total else 0
+        lines.append(f"- **{pct}%** of files are typed")
+        lines.append(f"- {result.typed_files} typed files, {result.untyped_files} untyped files")
+        lines.append(f"- {result.typed_lines:,} typed lines, {result.untyped_lines:,} untyped lines")
+        lines.append("")
+
+        if result.by_extension:
+            lines.append("### By Extension")
+            lines.append("")
+            lines.append("| Extension | Files | Typed Lines | Untyped Lines |")
+            lines.append("|-----------|-------|-------------|---------------|")
+            for ext, data in sorted(result.by_extension.items()):
+                lines.append(f"| {ext} | {data['files']} | {data['typed_lines']:,} | {data['untyped_lines']:,} |")
+            lines.append("")
+
+        return "\n".join(lines)
+
+    def _render_complexity(self, result: ComplexityResult) -> str:
+        lines = ["## Code Complexity", ""]
+
+        lines.append(f"- **Average function length**: {result.avg_function_length} lines")
+        lines.append(f"- **Max nesting depth**: {result.max_nesting}")
+        lines.append("")
+
+        if result.complex_files:
+            lines.append(f"### Complex Files ({len(result.complex_files)})")
+            lines.append("")
+            lines.append("| File | Long Functions | Max Nesting | Score |")
+            lines.append("|------|---------------|-------------|-------|")
+            for entry in result.complex_files:
+                n_long = len(entry["long_functions"])
+                lines.append(f"| `{entry['file']}` | {n_long} | {entry['max_nesting']} | {entry['score']} |")
+            lines.append("")
+        else:
+            lines.append("No complex files detected.")
+
+        return "\n".join(lines)
+
+    def _render_duplicates(self, result: DuplicateResult) -> str:
+        lines = ["## Duplicate Files", ""]
+
+        if result.total_duplicates == 0:
+            lines.append("No duplicate files found.")
+            return "\n".join(lines)
+
+        lines.append(f"- **{result.total_duplicates}** duplicate file(s) found")
+        if result.total_saved_bytes:
+            lines.append(f"- **{self._format_size(result.total_saved_bytes)}** could be saved")
+        lines.append("")
+
+        lines.append("| Duplicate File | Original | Size | Similarity |")
+        lines.append("|----------------|----------|------|------------|")
+        for dup in result.duplicates[:20]:
+            sim = f"{dup['similarity']*100:.0f}%"
+            lines.append(f"| `{dup['file']}` | `{dup['duplicate_of']}` | {self._format_size(dup['size'])} | {sim} |")
+        if len(result.duplicates) > 20:
+            lines.append(f"| *...and {len(result.duplicates) - 20} more* | | | |")
+        lines.append("")
+
         return "\n".join(lines)
 
     def _format_size(self, size: int) -> str:

@@ -24,6 +24,19 @@ SECRET_PATTERNS = [
     (r"redis_url\s*[:=]\s*['\"]?redis://[^'\"]+['\"]?", "Redis URL"),
     (r"jwt_secret\s*[:=]\s*['\"]?([a-zA-Z0-9_\-]{32,})['\"]?", "JWT Secret"),
     (r"-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----", "Private Key Block"),
+    # AI provider API keys
+    (r"(?i)sk-proj-[A-Za-z0-9]{20,}", "OpenAI Project Key"),
+    (r"(?i)sk-ant-api03-[A-Za-z0-9]{24,}", "Anthropic API Key"),
+    (r"AIzaSy[A-Za-z0-9_-]{33}", "Google Gemini API Key"),
+    (r"(?i)(?:trial|prod)_[A-Za-z0-9]{20,}", "Cohere API Key"),
+    (r"hf_[A-Za-z0-9]{20,}", "Hugging Face API Key"),
+    (r"(?i)v[12]\.[A-Za-z0-9]{20,}", "Mistral API Key"),
+    (r"gsk_[A-Za-z0-9]{20,}", "Groq API Key"),
+    (r"pplx-[A-Za-z0-9]{20,}", "Perplexity API Key"),
+    (r"ese_[A-Za-z0-9]{20,}", "Anyscale API Key"),
+    (r"r8_[A-Za-z0-9]{20,}", "Replicate API Key"),
+    (r"sk-or-v1-[A-Za-z0-9]{20,}", "OpenRouter API Key"),
+    (r"(?i)sk-[A-Za-z0-9]{32,}", "Generic AI Secret Key"),
 ]
 
 
