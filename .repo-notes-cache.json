@@ -168,9 +168,9 @@
       "hash": "a850dc3bd02fae6a731c8930b0933d7e650de41d29e7625b654434c94b9687cd"
     },
     "src/repo_notes/extractors/todos.py": {
-      "mtime": 1781548463480128348,
-      "size": 2214,
-      "hash": "9d4b62671ceabd124666c39d55fda062e2c31ee20f40f84309865b35e0a246f2"
+      "mtime": 1781559100237183966,
+      "size": 6724,
+      "hash": "ccd4c10abcbcc8fbf2b06d519fa44215bd98db00fd54cc391d1305484feba852"
     },
     "src/repo_notes/extractors/type_coverage.py": {
       "mtime": 1781551774864225554,
@@ -298,9 +298,9 @@
       "hash": "2f67868e0d719456d0ad40f6cf5d06a03520a5e276e5fa8a6e96c5521af97391"
     },
     "tests/test_todos_extractor.py": {
-      "mtime": 1781548568062105312,
-      "size": 2641,
-      "hash": "93f67ef64b2f7bfed246a72d320d858403728d59c025dd7bc2e857e33e88b4b4"
+      "mtime": 1781558965924316045,
+      "size": 5837,
+      "hash": "58fbcd5404bfe50a1529394273ba13286e7b5181d7da0e83fcc35d977cea3709"
     },
     "tests/test_type_coverage_extractor.py": {
       "mtime": 1781551979005468261,
