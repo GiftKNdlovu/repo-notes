@@ -35,9 +35,15 @@ class SecurityResult:
 
 
 class SecurityExtractor:
-    def __init__(self, entropy_threshold: float = 4.5):
+    def __init__(self, entropy_threshold: float = 4.5, patterns: list[str] | None = None):
         self.entropy_threshold = entropy_threshold
         self._compiled_patterns = [(re.compile(p, re.IGNORECASE), name) for p, name in SECRET_PATTERNS]
+        if patterns:
+            for p in patterns:
+                try:
+                    self._compiled_patterns.append((re.compile(p, re.IGNORECASE), "Custom Pattern"))
+                except re.error:
+                    pass
 
     def extract(self, root: Path, files: list[FileInfo]) -> SecurityResult:
         findings = []

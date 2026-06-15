@@ -33,12 +33,12 @@ Planned features for `repo-notes`, organized by category.
 
 ## New Extractors
 
-- [ ] **TODO/FIXME/HACK extraction** — surface developer comments across all languages
+- [x] **TODO/FIXME/HACK extraction** — surface developer comments across all languages
 - [ ] **API endpoint detection** — routes from Flask, FastAPI, Django, Express, Rails
 - [ ] **CI/CD config parsing** — GitHub Actions, GitLab CI, CircleCI, Jenkinsfile
 - [ ] **Database schema** — SQL migrations, ORM models (SQLAlchemy, Prisma, ActiveRecord)
-- [ ] **Environment variables consumed** — scan for `os.getenv`, `process.env`, `env!()`
-- [ ] **Scripts section** — `package.json` scripts, Makefile targets, justfile
+- [x] **Environment variables consumed** — scan for `os.getenv`, `process.env`, `env!()`
+- [x] **Scripts section** — `package.json` scripts, Makefile targets, justfile
 - [ ] **Type coverage** — rough estimate of typed vs untyped code (type hints, TypeScript types)
 - [ ] **Code complexity** — cyclomatic complexity per file (long functions, nesting depth)
 - [ ] **Duplicate detection** — near-duplicate file detection via tokens or line hashes
@@ -63,16 +63,16 @@ Planned features for `repo-notes`, organized by category.
 
 - [ ] **`--watch` / `-w`** — re-scan on file changes (watchdog)
 - [ ] **`--diff`** — compare current notes against last commit's version
-- [ ] **`--init`** — generate a `.repo-notes.yaml` template in the project
-- [ ] **`--json` output** — machine-readable for editor plugins
-- [ ] **Auto-detect git root** — scan repo root even from a subdirectory
+- [x] **`--init`** — generate a `.repo-notes.yaml` template in the project
+- [x] **`--json` output** — machine-readable via `--format json`
+- [x] **Auto-detect git root** — scan repo root even from a subdirectory
 - [x] **`--quiet` / `-q`** — suppress progress bars (CI-friendly)
 - [ ] **Tab-completion** — shell completion scripts (click built-in)
 
 ## Config Refinements
 
 - [ ] **Per-extractor options** — fine-grained toggle in config (e.g. `security.patterns`, `structure.max_depth`)
-- [ ] **Custom secret patterns** — user-defined regex patterns for secret scanning
+- [x] **Custom secret patterns** — user-defined regex patterns in config `security.patterns`
 - [ ] **Custom layer patterns** — user-defined path patterns for architecture layer detection
 - [ ] **Per-path extractor exclusion** — skip specific extractors on vendored/generated code
 - [ ] **Config profiles** — presets like `release`, `ci`, `quick`

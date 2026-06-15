@@ -19,12 +19,105 @@ from repo_notes.extractors import (
     ArchitectureExtractor,
     SecurityExtractor,
     ReadmeDataExtractor,
+    TodosExtractor,
+    ScriptsExtractor,
+    EnvVarsExtractor,
 )
 from repo_notes.generator import MarkdownGenerator
 from repo_notes.readme_generator import ReadmeGenerator
 from repo_notes.html_generator import HtmlGenerator
 
 console = Console()
+
+INIT_TEMPLATE = """# repo-notes configuration
+# Uncomment and modify as needed.
+
+# Directories or files to exclude (gitignore-style patterns)
+# exclude_patterns:
+#   - "*.log"
+#   - "build/"
+
+# Include hidden files and directories
+# include_hidden: false
+
+# Minimum file size in bytes (files smaller than this are skipped)
+# min_file_size: 0
+
+# detectors:
+#   enabled: ["all"]  # or ["python", "javascript", ...]
+
+# extractors:
+#   structure: true
+#   key_files: true
+#   stats: true
+#   dependencies: true
+#   git: true
+#   architecture: true
+#   security: true
+#   todos: true
+#   scripts: true
+#   env_vars: true
+
+# security:
+#   entropy_threshold: 4.5
+#   patterns: []  # custom regex patterns
+
+# structure:
+#   max_depth: 3
+#   show_hidden: false
+
+# output:
+#   format: notes  # notes, readme, both, html, or json
+#   order:
+#     - structure
+#     - key_files
+#     - stats
+#     - deps
+#     - git
+#     - arch
+#     - security
+#     - todos
+#     - scripts
+#     - env_vars
+"""
+
+
+def _serialize_json(results: dict) -> dict:
+    serialized: dict = {}
+    for key, val in results.items():
+        if val is None:
+            continue
+        if hasattr(val, "__dataclass_fields__"):
+            d = {}
+            for fname in val.__dataclass_fields__:
+                fval = getattr(val, fname)
+                d[fname] = _json_convert(fval)
+            serialized[key] = d
+        else:
+            serialized[key] = _json_convert(val)
+    return serialized
+
+
+def _json_convert(obj):
+    if isinstance(obj, Path):
+        return str(obj)
+    if isinstance(obj, set):
+        return list(obj)
+    if isinstance(obj, dict):
+        return {k: _json_convert(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_json_convert(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(_json_convert(v) for v in obj)
+    return obj
+
+
+def _find_git_root(path: Path) -> Path | None:
+    full = path.resolve()
+    for parent in [full] + list(full.parents):
+        if (parent / ".git").is_dir():
+            return parent
+    return None
 
 
 @click.command()
@@ -58,7 +151,7 @@ console = Console()
 )
 @click.option(
     "--format",
-    type=click.Choice(["notes", "readme", "both", "html"]),
+    type=click.Choice(["notes", "readme", "both", "html", "json"]),
     default=None,
     help="Output format (default: notes)",
 )
@@ -81,12 +174,18 @@ console = Console()
     help="Bypass incremental cache and force full re-scan",
 )
 @click.option(
+    "--init",
+    is_flag=True,
+    default=False,
+    help="Generate a .repo-notes.yaml template in the project root",
+)
+@click.option(
     "--replace-readme",
     is_flag=True,
     default=False,
     help="Write to README.md instead of rnREADME.md",
 )
-def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, replace_readme):
+def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, init, replace_readme):
     """Scan REPO_PATH and generate project notes.
 
     By default, generates REPO_NOTES.md with detailed technical notes.
@@ -94,7 +193,21 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
     Use --format readme --replace-readme to write to README.md directly.
     """
     root = path.resolve()
+    git_root = _find_git_root(root)
+    if git_root and git_root != root:
+        console.print(f"[dim]Auto-detected git root: {git_root}[/dim]")
+        root = git_root
     cfg = Config.load(root=root, path=config)
+
+    # --init: generate config template
+    if init:
+        cfg_path = root / ".repo-notes.yaml"
+        if cfg_path.exists() and not force:
+            console.print("[yellow].repo-notes.yaml already exists. Use --force to overwrite.[/yellow]")
+            return
+        cfg_path.write_text(INIT_TEMPLATE)
+        console.print(f"[green]Created[/green] {cfg_path}")
+        return
 
     # CLI overrides
     overrides = {}
@@ -108,13 +221,16 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
         cfg = cfg.merge_cli(**overrides)
 
     cache = CacheManager(root, cfg)
+    cache_hit = False
     if not no_cache and cache.is_valid():
         current_states = cache.compute_current_states()
         if not cache.has_changes(current_states):
-            console.print("[green]No changes since last scan. Use --no-cache to force re-scan.[/green]")
-            return
+            cache_hit = True
 
-    console.print(f"[bold]repo-notes[/bold] scanning [cyan]{root}[/cyan]...")
+    if cache_hit:
+        console.print("[green]No changes since last scan. Generating output...[/green]")
+    else:
+        console.print(f"[bold]repo-notes[/bold] scanning [cyan]{root}[/cyan]...")
 
     notes_output = output or root / "REPO_NOTES.md"
     readme_name = "README.md" if replace_readme else "rnREADME.md"
@@ -163,7 +279,13 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
         if cfg.extractors.architecture:
             extractors.append(("arch", ArchitectureExtractor(), files))
         if cfg.extractors.security:
-            extractors.append(("security", SecurityExtractor(entropy_threshold=cfg.security.entropy_threshold), files))
+            extractors.append(("security", SecurityExtractor(entropy_threshold=cfg.security.entropy_threshold, patterns=cfg.security.patterns), files))
+        if cfg.extractors.todos:
+            extractors.append(("todos", TodosExtractor(), files))
+        if cfg.extractors.scripts:
+            extractors.append(("scripts", ScriptsExtractor(), files))
+        if cfg.extractors.env_vars:
+            extractors.append(("env_vars", EnvVarsExtractor(), files))
         # README data always extracted
         extractors.append(("readme", ReadmeDataExtractor(), files))
 
@@ -220,6 +342,17 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
 
         size = html_output.stat().st_size
         console.print(f"[green]Done![/green] HTML notes written to [bold]{html_output}[/bold]")
+        console.print(f"  - {len(files)} files scanned")
+        console.print(f"  - {size:,} bytes")
+
+    if cfg.output.format == "json":
+        import json as json_mod
+        json_output = output or root / "REPO_NOTES.json"
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        payload = _serialize_json(results)
+        json_output.write_text(json_mod.dumps(payload, indent=2), encoding="utf-8")
+        size = json_output.stat().st_size
+        console.print(f"[green]Done![/green] JSON notes written to [bold]{json_output}[/bold]")
         console.print(f"  - {len(files)} files scanned")
         console.print(f"  - {size:,} bytes")
 
