@@ -385,6 +385,15 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
         readme_md = readme_gen.generate(
             readme_data=readme_data,
             stats=results.get("stats"),
+            project_intelligence=results.get("project_intelligence"),
+            scripts=results.get("scripts"),
+            arch=results.get("arch"),
+            deps=results.get("deps"),
+            cicd=results.get("cicd"),
+            type_coverage=results.get("type_coverage"),
+            complexity=results.get("complexity"),
+            api_endpoints=results.get("api_endpoints"),
+            database=results.get("database"),
         )
 
         readme_output.parent.mkdir(parents=True, exist_ok=True)

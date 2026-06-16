@@ -4,6 +4,18 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from repo_notes.extractors import (
+    ApiEndpointResult,
+    ArchitectureResult,
+    CicdResult,
+    ComplexityResult,
+    DatabaseResult,
+    DependenciesResult,
+    DetectedTool,
+    ProjectIntelligenceResult,
+    ScriptsResult,
+    TypeCoverageResult,
+)
 from repo_notes.extractors.readme_data import ReadmeData, ReadmeDataExtractor
 from repo_notes.extractors.stats import StatsResult
 from repo_notes.readme_generator import ReadmeGenerator
@@ -89,6 +101,90 @@ def test_features_with_tests_and_ci():
     md = gen.generate(readme_data=data)
     assert "Test suite" in md
     assert "CI configured" in md
+
+
+def test_includes_tech_stack_from_project_intelligence():
+    gen = ReadmeGenerator(Path("proj"))
+    data = ReadmeData(name="app")
+    md = gen.generate(
+        readme_data=data,
+        project_intelligence=ProjectIntelligenceResult(
+            tools={
+                "Languages": [DetectedTool(name="Python", category="Languages")],
+                "Testing": [DetectedTool(name="pytest", category="Testing")],
+                "Linting": [DetectedTool(name="Ruff", category="Linting")],
+            }
+        ),
+        deps=DependenciesResult(python={"pyproject.toml": {"dependencies": ["click"]}}),
+    )
+
+    assert "## Tech Stack" in md
+    assert "**Languages**: Python" in md
+    assert "**Testing**: pytest" in md
+    assert "`pyproject.toml`" in md
+
+
+def test_includes_detected_commands():
+    gen = ReadmeGenerator(Path("proj"))
+    data = ReadmeData(name="app")
+    md = gen.generate(
+        readme_data=data,
+        project_intelligence=ProjectIntelligenceResult(
+            tools={"Testing": [DetectedTool(name="pytest", category="Testing")]}
+        ),
+        scripts=ScriptsResult(
+            package_json={"test": "vitest run", "build": "vite build"},
+            pyproject_scripts={"app": "app.cli:main"},
+        ),
+    )
+
+    assert "## Commands" in md
+    assert "`npm run test`" in md
+    assert "`npm run build`" in md
+    assert "`app`" in md
+    assert "`pytest`" in md
+
+
+def test_includes_project_structure_from_architecture():
+    gen = ReadmeGenerator(Path("proj"))
+    data = ReadmeData(name="app")
+    md = gen.generate(
+        readme_data=data,
+        arch=ArchitectureResult(
+            entry_points=[Path("src/app/cli.py")],
+            layers={"tests": [Path("tests/test_cli.py")]},
+        ),
+        project_intelligence=ProjectIntelligenceResult(
+            categories={"readme": [Path("README.md")], "ci": [Path(".github/workflows/ci.yml")]}
+        ),
+    )
+
+    assert "## Project Structure" in md
+    assert "`src/app/cli.py`" in md
+    assert "Entry point" in md
+    assert "`README.md`" in md
+    assert "`tests/test_cli.py`" in md
+
+
+def test_includes_quality_notes():
+    gen = ReadmeGenerator(Path("proj"))
+    data = ReadmeData(name="app", has_tests=True)
+    md = gen.generate(
+        readme_data=data,
+        cicd=CicdResult(github_actions=[{"name": "CI", "jobs": ["test"]}]),
+        type_coverage=TypeCoverageResult(typed_files=8, untyped_files=2),
+        complexity=ComplexityResult(complex_files=[{"file": "src/app/service.py", "score": 100}]),
+        api_endpoints=ApiEndpointResult(endpoints=[{"file": "tests/test_api.py"}]),
+        database=DatabaseResult(model_files=[Path("tests/test_database.py")]),
+    )
+
+    assert "## Quality Notes" in md
+    assert "Tests were detected" in md
+    assert "CI/CD configuration was detected" in md
+    assert "80.0% of files typed" in md
+    assert "`src/app/service.py`" in md
+    assert "API endpoint patterns appear only in tests" in md
+    assert "Database/ORM signals appear only in tests" in md
 
 
 def test_stats_section():
@@ -271,6 +367,26 @@ def test_cli_readme_format_default():
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         (root / "main.py").write_text("def main(): pass\n")
+        (root / "pyproject.toml").write_text("""[project]
+name = "demo"
+version = "1.0.0"
+description = "Demo package"
+dependencies = ["click>=8.0"]
+
+[project.scripts]
+demo = "demo.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.1.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+""")
+        (root / "tests").mkdir()
+        (root / "tests" / "test_main.py").write_text("def test_main(): pass\n")
         result = subprocess.run(
             ["repo-notes", str(root), "--format", "readme"],
             capture_output=True,
@@ -281,6 +397,11 @@ def test_cli_readme_format_default():
         assert readme.exists()
         content = readme.read_text()
         assert "# " in content
+        assert "## Tech Stack" in content
+        assert "## Commands" in content
+        assert "`demo`" in content
+        assert "pytest" in content
+        assert "Ruff" in content
 
 
 def test_cli_readme_replace():
