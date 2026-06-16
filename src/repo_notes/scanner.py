@@ -35,6 +35,7 @@ DEFAULT_IGNORE = [
     ".repo-notes-cache.json",
     ".repo-notes-cache.tmp",
     "REPO_NOTES.md",
+    "REPO_NOTES_AGENTS.md",
     "REPO_NOTES.html",
     "REPO_NOTES.json",
     "rnREADME.md",

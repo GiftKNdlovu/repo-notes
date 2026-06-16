@@ -17,7 +17,7 @@ class GitResult:
 
 class GitExtractor:
     def extract(self, root: Path, files: list) -> GitResult:
-        if not (root / ".git").exists():
+        if not self._is_git_repo(root):
             return GitResult(is_repo=False)
 
         result = GitResult(is_repo=True)
@@ -59,6 +59,17 @@ class GitExtractor:
                 })
 
         return result
+
+    def _is_git_repo(self, root: Path) -> bool:
+        if not (root / ".git").exists():
+            return False
+        output = self._run_git(root, ["rev-parse", "--show-toplevel"]).strip()
+        if not output:
+            return False
+        try:
+            return Path(output).resolve() == root.resolve()
+        except OSError:
+            return False
 
     def _run_git(self, root: Path, args: list[str]) -> str:
         try:

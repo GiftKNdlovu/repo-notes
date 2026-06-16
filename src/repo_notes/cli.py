@@ -1,6 +1,7 @@
 """CLI interface for repo-notes."""
 
 import os
+import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 
 from repo_notes import __version__
+from repo_notes.agents_generator import AgentsGenerator
 from repo_notes.cache import CacheManager
 from repo_notes.config import Config
 from repo_notes.extractors import (
@@ -80,7 +82,7 @@ INIT_TEMPLATE = """# repo-notes configuration
 #   show_hidden: false
 
 # output:
-#   format: notes  # notes, readme, both, html, or json
+#   format: notes  # notes, readme, agents, both, html, or json
 #   order:
 #     - structure
 #     - stats
@@ -133,7 +135,21 @@ def _json_convert(obj):
 def _find_git_root(path: Path) -> Path | None:
     full = path.resolve()
     for parent in [full] + list(full.parents):
-        if (parent / ".git").is_dir():
+        if not (parent / ".git").exists():
+            continue
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(parent), "rev-parse", "--show-toplevel"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except Exception:
+            continue
+        if result.returncode != 0:
+            continue
+        git_root = Path(result.stdout.strip()).resolve()
+        if git_root == parent.resolve():
             return parent
     return None
 
@@ -170,7 +186,7 @@ def _find_git_root(path: Path) -> Path | None:
 )
 @click.option(
     "--format",
-    type=click.Choice(["notes", "readme", "both", "html", "json"]),
+    type=click.Choice(["notes", "readme", "agents", "both", "html", "json"]),
     default=None,
     help="Output format (default: notes)",
 )
@@ -209,6 +225,7 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
 
     By default, generates REPO_NOTES.md with detailed technical notes.
     Use --format readme to generate a rnREADME.md instead (safe for existing READMEs).
+    Use --format agents to generate REPO_NOTES_AGENTS.md for AI coding agents.
     Use --format readme --replace-readme to write to README.md directly.
     """
     root = path.resolve()
@@ -252,6 +269,7 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
         console.print(f"[bold]repo-notes[/bold] scanning [cyan]{root}[/cyan]...")
 
     notes_output = output or root / "REPO_NOTES.md"
+    agents_output = output if cfg.output.format == "agents" and output else root / "REPO_NOTES_AGENTS.md"
     readme_name = "README.md" if replace_readme else "rnREADME.md"
     readme_output = root / readme_name
 
@@ -349,6 +367,16 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
 
         size = notes_output.stat().st_size
         console.print(f"[green]Done![/green] Notes written to [bold]{notes_output}[/bold]")
+        console.print(f"  - {len(files)} files scanned")
+        console.print(f"  - {size:,} bytes")
+
+    if cfg.output.format in ("agents", "both"):
+        agents_gen = AgentsGenerator(root)
+        agents_output.parent.mkdir(parents=True, exist_ok=True)
+        agents_gen.write_to(agents_output, **results)
+
+        size = agents_output.stat().st_size
+        console.print(f"[green]Done![/green] Agent notes written to [bold]{agents_output}[/bold]")
         console.print(f"  - {len(files)} files scanned")
         console.print(f"  - {size:,} bytes")
 

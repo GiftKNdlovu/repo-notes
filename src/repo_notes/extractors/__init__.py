@@ -9,7 +9,11 @@ from .dependencies import DependenciesExtractor, DependenciesResult
 from .duplicates import DuplicateExtractor, DuplicateResult
 from .env_vars import EnvVarsExtractor, EnvVarsResult
 from .git import GitExtractor, GitResult
-from .project_intelligence import ProjectIntelligenceExtractor, ProjectIntelligenceResult
+from .project_intelligence import (
+    DetectedTool,
+    ProjectIntelligenceExtractor,
+    ProjectIntelligenceResult,
+)
 from .readme_data import ReadmeData, ReadmeDataExtractor
 from .scripts import ScriptsExtractor, ScriptsResult
 from .security import SecurityExtractor, SecurityResult
@@ -35,6 +39,7 @@ __all__ = [
     "ReadmeData",
     "ProjectIntelligenceExtractor",
     "ProjectIntelligenceResult",
+    "DetectedTool",
     "TodosExtractor",
     "TodosResult",
     "ScriptsExtractor",

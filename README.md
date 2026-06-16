@@ -28,9 +28,13 @@ This creates `REPO_NOTES.md` with all available information about the project.
 | Notes (default) | `repo-notes .` | `REPO_NOTES.md` |
 | README | `repo-notes . --format readme` | `rnREADME.md` |
 | README (overwrite) | `repo-notes . --format readme --replace-readme --force` | `README.md` |
-| Both | `repo-notes . --format both` | `REPO_NOTES.md` + `rnREADME.md` |
+| Agents | `repo-notes . --format agents` | `REPO_NOTES_AGENTS.md` |
+| Both | `repo-notes . --format both` | `REPO_NOTES.md` + `rnREADME.md` + `REPO_NOTES_AGENTS.md` |
 | HTML | `repo-notes . --format html` | `REPO_NOTES.html` |
 | JSON | `repo-notes . --format json` | `REPO_NOTES.json` |
+
+`README.md` is the manually maintained project README. `rnREADME.md` is the safe generated
+README output unless `--replace-readme --force` is used.
 
 ## CLI Reference
 
@@ -39,7 +43,7 @@ This creates `REPO_NOTES.md` with all available information about the project.
 | `PATH` | Directory to scan (default: current directory) |
 | `-c, --config PATH` | Path to `.repo-notes.yaml` config file |
 | `-o, --output PATH` | Output file path (default: `REPO_NOTES.md`) |
-| `--format {notes,readme,both,html,json}` | Output format |
+| `--format {notes,readme,agents,both,html,json}` | Output format |
 | `--replace-readme` | Write to `README.md` instead of `rnREADME.md` |
 | `--force` | Overwrite existing output files |
 | `--max-depth N` | Maximum depth for directory tree (default: 3) |
@@ -206,7 +210,7 @@ structure:
 
 # Output options
 output:
-  format: notes  # notes, readme, both, html, or json
+  format: notes  # notes, readme, agents, both, html, or json
   order:
     - structure
     - project_intelligence
