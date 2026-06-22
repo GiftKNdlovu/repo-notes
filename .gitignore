@@ -35,7 +35,15 @@ htmlcov/
 # Project specific (generated files)
 REPO_NOTES.md
 REPO_NOTES.html
+REPO_NOTES.json
 rnREADME.md
+.repo-notes-cache.json
+.repo-notes-cache.tmp
+test_results.txt
+
+# Tool artifacts (codebase-memory-mcp, Hermes, etc.)
+.codebase-memory/
+.hermes/
 
 # OS
 Thumbs.db

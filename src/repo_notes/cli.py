@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
 
 from repo_notes import __version__
+from repo_notes.agents_generator import AgentsGenerator
 from repo_notes.cache import CacheManager
 from repo_notes.config import Config
 from repo_notes.extractors import (
@@ -101,19 +102,7 @@ INIT_TEMPLATE = """# repo-notes configuration
 
 
 def _serialize_json(results: dict) -> dict:
-    serialized: dict = {}
-    for key, val in results.items():
-        if val is None:
-            continue
-        if hasattr(val, "__dataclass_fields__"):
-            d = {}
-            for fname in val.__dataclass_fields__:
-                fval = getattr(val, fname)
-                d[fname] = _json_convert(fval)
-            serialized[key] = d
-        else:
-            serialized[key] = _json_convert(val)
-    return serialized
+    return {k: _json_convert(v) for k, v in results.items() if v is not None}
 
 
 def _json_convert(obj):
@@ -127,6 +116,8 @@ def _json_convert(obj):
         return [_json_convert(v) for v in obj]
     if isinstance(obj, tuple):
         return tuple(_json_convert(v) for v in obj)
+    if hasattr(obj, "__dataclass_fields__"):
+        return {fname: _json_convert(getattr(obj, fname)) for fname in obj.__dataclass_fields__}
     return obj
 
 
@@ -204,7 +195,13 @@ def _find_git_root(path: Path) -> Path | None:
     default=False,
     help="Write to README.md instead of rnREADME.md",
 )
-def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, init, replace_readme):
+@click.option(
+    "--agents",
+    is_flag=True,
+    default=False,
+    help="Generate AGENTS.md with agent-oriented repo summary",
+)
+def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, init, replace_readme, agents):
     """Scan REPO_PATH and generate project notes.
 
     By default, generates REPO_NOTES.md with detailed technical notes.
@@ -386,6 +383,19 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
         console.print(f"[green]Done![/green] JSON notes written to [bold]{json_output}[/bold]")
         console.print(f"  - {len(files)} files scanned")
         console.print(f"  - {size:,} bytes")
+
+    # Generate AGENTS.md for coding agents
+    if agents:
+        agent_gen = AgentsGenerator(root)
+        agents_md = agent_gen.generate(
+            readme_data=readme_data,
+            structure=results.get("structure"),
+            stats=results.get("stats"),
+            scripts=results.get("scripts"),
+        )
+        agents_output = root / "AGENTS.md"
+        agents_output.write_text(agents_md, encoding="utf-8")
+        console.print(f"[green]Done![/green] Agent notes written to [bold]{agents_output}[/bold]")
 
     # Update cache after successful scan
     cache.save_from_file_infos(files)

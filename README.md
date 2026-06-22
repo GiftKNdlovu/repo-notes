@@ -31,6 +31,7 @@ This creates `REPO_NOTES.md` with all available information about the project.
 | Both | `repo-notes . --format both` | `REPO_NOTES.md` + `rnREADME.md` |
 | HTML | `repo-notes . --format html` | `REPO_NOTES.html` |
 | JSON | `repo-notes . --format json` | `REPO_NOTES.json` |
+| Agent notes | `repo-notes . --agents` | `AGENTS.md` |
 
 ## CLI Reference
 
@@ -47,6 +48,7 @@ This creates `REPO_NOTES.md` with all available information about the project.
 | `-q, --quiet` | Suppress progress output (for CI) |
 | `--no-cache` | Bypass incremental cache, force full re-scan |
 | `--init` | Generate a `.repo-notes.yaml` template |
+| `--agents` | Generate `AGENTS.md` with agent-oriented repo summary |
 | `--version` | Show version and exit |
 | `--help` | Show help message |
 
