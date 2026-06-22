@@ -269,14 +269,23 @@ src/repo_notes/
 ├── html_generator.py    # HTML output generator
 ├── html_templates.py    # HTML/CSS/JS templates
 ├── readme_generator.py  # README.md generator
-├── detectors/           # Language detectors
+├── detectors/           # Language detectors (15 languages)
 │   ├── base.py
 │   ├── registry.py
 │   ├── python.py
 │   ├── javascript.py
 │   ├── go.py
 │   ├── rust.py
-│   └── ... (10 languages)
+│   ├── java.py
+│   ├── c_cpp.py
+│   ├── ruby.py
+│   ├── php.py
+│   ├── swift.py
+│   ├── kotlin.py
+│   ├── r_lang.py
+│   ├── shell.py
+│   ├── sql.py
+│   └── docker.py
 └── extractors/          # Data extractors
     ├── structure.py
     ├── project_intelligence.py

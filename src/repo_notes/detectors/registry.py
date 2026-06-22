@@ -57,8 +57,34 @@ def get_registry() -> DetectorRegistry:
 
 
 def _register_builtin(registry: DetectorRegistry) -> None:
-    from . import go, javascript, python, rust
+    from . import (
+        c_cpp,
+        docker,
+        go,
+        java,
+        javascript,
+        kotlin,
+        php,
+        python,
+        r_lang,
+        ruby,
+        rust,
+        shell,
+        sql,
+        swift,
+    )
     registry.register(python.PythonDetector())
     registry.register(javascript.JavaScriptDetector())
+    registry.register(javascript.TypeScriptDetector())
     registry.register(go.GoDetector())
     registry.register(rust.RustDetector())
+    registry.register(java.JavaDetector())
+    registry.register(c_cpp.CppDetector())
+    registry.register(ruby.RubyDetector())
+    registry.register(php.PhpDetector())
+    registry.register(swift.SwiftDetector())
+    registry.register(kotlin.KotlinDetector())
+    registry.register(r_lang.RDetector())
+    registry.register(shell.ShellDetector())
+    registry.register(sql.SqlDetector())
+    registry.register(docker.DockerDetector())
