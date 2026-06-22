@@ -339,3 +339,65 @@ def test_cli_both_formats():
         assert result.returncode == 0
         assert (root / "REPO_NOTES.md").exists()
         assert (root / "rnREADME.md").exists()
+
+
+# Snapshot tests — stable, reviewable full-output checks
+
+def test_readme_snapshot_matches():
+    """Full ReadmeGenerator output with consistent inputs."""
+    gen = ReadmeGenerator(Path("test-project"))
+    data = ReadmeData(
+        name="test-project", description="A test project",
+        version="0.1.0", license_type="MIT", python_requires=">=3.10",
+        install_cmd="pip install test-project",
+        dev_install_cmd="pip install -e .",
+        runtime_deps=["click", "pyyaml", "rich"], has_tests=True,
+    )
+    md = gen.generate(readme_data=data)
+    assert md == (
+        "# test-project\n"
+        "\n"
+        "A test project\n"
+        "\n"
+        "![Version](https://img.shields.io/badge/version-0.1.0-blue) "
+        "![License](https://img.shields.io/badge/license-MIT-green) "
+        "![Python](https://img.shields.io/badge/python-%3E%3D3.10-yellow) "
+        "![Tests](https://img.shields.io/badge/tests-passing-brightgreen)\n"
+        "\n"
+        "## Quick Start\n"
+        "\n"
+        "```bash\n"
+        "pip install test-project\n"
+        "```\n"
+        "\n"
+        "## Features\n"
+        "\n"
+        "- **3 runtime dependencies** — click, pyyaml, rich\n"
+        "- **Test suite** — ready for development\n"
+        "\n"
+        "## Usage\n"
+        "\n"
+        "```\n"
+        "test-project [OPTIONS] [PATH]\n"
+        "```\n"
+        "\n"
+        "## Development\n"
+        "\n"
+        "```bash\n"
+        "pip install -e .\n"
+        "```\n"
+        "\n"
+        "### Commands\n"
+        "\n"
+        "```bash\n"
+        "# Run tests\n"
+        "pytest\n"
+        "\n"
+        "# Run linter\n"
+        "ruff check src/ tests/\n"
+        "```\n"
+        "\n"
+        "## License\n"
+        "\n"
+        "MIT\n"
+    )
