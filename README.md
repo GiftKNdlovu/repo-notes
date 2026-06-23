@@ -18,14 +18,6 @@ It runs locally. No hosted service required.
 
 Requires Python 3.10 or newer.
 
-Install the latest version from GitHub:
-
-```bash
-pip install git+https://github.com/GiftKNdlovu/repo-notes.git
-```
-
-After the package is published to PyPI, installation will be:
-
 ```bash
 pip install repo-notes
 ```
