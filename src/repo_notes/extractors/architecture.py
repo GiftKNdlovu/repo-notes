@@ -35,6 +35,18 @@ class DeadCodeCandidate:
 
 
 @dataclass(slots=True)
+class MissingTestCandidate:
+    file: str
+    reason: str
+
+
+@dataclass(slots=True)
+class TestSignal:
+    file: str
+    test_files: list[str]
+
+
+@dataclass(slots=True)
 class ArchitectureResult:
     layers: dict[str, list[Path]] = field(default_factory=dict)
     import_graph: dict[str, list[str]] = field(default_factory=dict)
@@ -42,6 +54,8 @@ class ArchitectureResult:
     circular_deps: list[list[str]] = field(default_factory=list)
     coupling_hotspots: list[CouplingHotspot] = field(default_factory=list)
     dead_code_candidates: list[DeadCodeCandidate] = field(default_factory=list)
+    missing_test_candidates: list[MissingTestCandidate] = field(default_factory=list)
+    test_signals: list[TestSignal] = field(default_factory=list)
 
 
 class ArchitectureExtractor:
@@ -87,6 +101,16 @@ class ArchitectureExtractor:
         dead_code_candidates = self._compute_dead_code_candidates(
             files, import_graph, entry_points, source_files,
         )
+        test_signals, test_file_set = self._compute_test_signals(
+            source_files, import_graph,
+        )
+        source_to_tests: dict[str, set[str]] = {
+            ts.file: set(ts.test_files) for ts in test_signals
+        }
+        missing_test_candidates = self._compute_missing_test_candidates(
+            source_files, test_file_set, source_to_tests,
+            coupling_hotspots, entry_points, import_graph,
+        )
 
         return ArchitectureResult(
             layers=dict(layers),
@@ -95,6 +119,8 @@ class ArchitectureExtractor:
             circular_deps=circular_deps,
             coupling_hotspots=coupling_hotspots,
             dead_code_candidates=dead_code_candidates,
+            missing_test_candidates=missing_test_candidates,
+            test_signals=test_signals,
         )
 
     def _detect_layer(self, path: Path) -> str | None:
@@ -184,6 +210,32 @@ class ArchitectureExtractor:
         return hotspots[:10]
 
     @staticmethod
+    def _is_excluded_from_missing_test(rel: str) -> bool:
+        """Check if a file should be excluded from missing-test candidate reporting.
+        Unlike _is_excluded_from_dead_code, entry-point filenames are NOT excluded
+        (they should be included and prioritized)."""
+        name = Path(rel).name
+        parts = rel.replace("\\", "/").split("/")
+        # Package init files
+        if name == "__init__.py":
+            return True
+        # Test files and directories
+        if name.startswith("test_") or name.endswith("_test.py"):
+            return True
+        if any(p in ("tests", "specs", "__test__") for p in parts):
+            return True
+        # Config and build files
+        if name in ("setup.cfg", "setup.py", "pyproject.toml", "Makefile", "Dockerfile", "docker-compose.yml", ".env.example"):
+            return True
+        # Generated / doc artifacts
+        if name in ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE", "AGENTS.md", "REPO_NOTES.md"):
+            return True
+        # Directories known to be non-production
+        if any(p in ("scripts", "benchmarks", "migrations", "alembic", "docs", "config") for p in parts):
+            return True
+        return False
+
+    @staticmethod
     def _is_excluded_from_dead_code(rel: str) -> bool:
         """Check if a file should be excluded from dead-code candidate reporting."""
         name = Path(rel).name
@@ -267,6 +319,139 @@ class ArchitectureExtractor:
 
         candidates.sort(key=lambda c: c.file)
         return candidates[:10]
+
+    @staticmethod
+    def _compute_test_signals(
+        known_files: set[str],
+        import_graph: dict[str, list[str]],
+    ) -> tuple[list[TestSignal], set[str]]:
+        """Compute test signals — which source files have likely direct tests.
+
+        Returns (test_signals, test_file_set).
+        Matching uses filename/stem patterns plus import-based resolution
+        via _resolve_target.
+        """
+        test_file_set: set[str] = set()
+        for f in known_files:
+            name = Path(f).name
+            if name.startswith("test_") or name.endswith("_test.py"):
+                test_file_set.add(f)
+            parts = f.replace("\\", "/").split("/")
+            if any(p in ("tests", "specs", "__test__") for p in parts):
+                test_file_set.add(f)
+
+        source_to_tests: dict[str, set[str]] = defaultdict(set)
+
+        # Filename/stem-based matching
+        for f in known_files:
+            if f in test_file_set:
+                continue
+            if ArchitectureExtractor._is_excluded_from_missing_test(f):
+                continue
+            for test_f in test_file_set:
+                if ArchitectureExtractor._filename_matches(f, test_f):
+                    source_to_tests[f].add(test_f)
+
+        # Import-based matching: a test importing a source file is a signal
+        for test_file in test_file_set:
+            for imp in import_graph.get(test_file, []):
+                resolved = ArchitectureExtractor._resolve_target(imp, known_files)
+                if resolved is None:
+                    continue
+                if resolved in test_file_set:
+                    continue
+                if ArchitectureExtractor._is_excluded_from_missing_test(resolved):
+                    continue
+                source_to_tests[resolved].add(test_file)
+
+        test_signals = [
+            TestSignal(file=f, test_files=sorted(tf))
+            for f, tf in sorted(source_to_tests.items())
+        ]
+        return test_signals, test_file_set
+
+    @staticmethod
+    def _filename_matches(source_file: str, test_file: str) -> bool:
+        """Check if a test filename matches a source file by naming convention."""
+        src = Path(source_file)
+        stem = src.stem
+        ext = src.suffix
+        parent_path = src.parent
+        parent_str = parent_path.as_posix()
+        parent_name = parent_path.name if parent_str != "." else ""
+
+        candidates: set[str] = set()
+        if parent_str != ".":
+            candidates.add(f"{parent_str}/test_{stem}{ext}")
+            candidates.add(f"{parent_str}/{stem}_test{ext}")
+        else:
+            candidates.add(f"test_{stem}{ext}")
+            candidates.add(f"{stem}_test{ext}")
+
+        candidates.add(f"tests/test_{stem}{ext}")
+        candidates.add(f"tests/{stem}_test{ext}")
+
+        if parent_str != ".":
+            candidates.add(f"tests/{parent_str}/test_{stem}{ext}")
+
+        candidates.add(f"specs/test_{stem}{ext}")
+        if parent_str != ".":
+            candidates.add(f"specs/{parent_str}/test_{stem}{ext}")
+
+        if parent_name:
+            candidates.add(f"tests/test_{parent_name}{ext}")
+            candidates.add(f"tests/{parent_name}_test{ext}")
+
+        return test_file in candidates
+
+    @staticmethod
+    def _compute_missing_test_candidates(
+        known_files: set[str],
+        test_file_set: set[str],
+        source_to_tests: dict[str, set[str]],
+        coupling_hotspots: list[CouplingHotspot],
+        entry_points: list[Path],
+        import_graph: dict[str, list[str]],
+    ) -> list[MissingTestCandidate]:
+        coupling_scores: dict[str, int] = {}
+        for h in coupling_hotspots:
+            coupling_scores[h.file] = h.total
+
+        entry_paths: set[str] = {p.as_posix() for p in entry_points}
+
+        outgoing: dict[str, int] = {}
+        incoming: dict[str, int] = {}
+        for src, targets in import_graph.items():
+            local_targets = []
+            for t in targets:
+                resolved = ArchitectureExtractor._resolve_target(t, known_files)
+                if resolved:
+                    local_targets.append(resolved)
+            outgoing[src] = len(local_targets)
+            for resolved in local_targets:
+                incoming[resolved] = incoming.get(resolved, 0) + 1
+
+        candidates: list[tuple[int, str, str]] = []
+        for f in sorted(known_files):
+            if f in test_file_set:
+                continue
+            if ArchitectureExtractor._is_excluded_from_missing_test(f):
+                continue
+            if f in source_to_tests:
+                continue
+
+            out_c = outgoing.get(f, 0)
+            in_c = incoming.get(f, 0)
+            total_conn = out_c + in_c
+            score = coupling_scores.get(f, 0)
+            if f in entry_paths:
+                score += 10
+            score += total_conn
+
+            candidates.append((score, f, "no matching direct test file found"))
+
+        candidates.sort(key=lambda c: (-c[0], c[1]))
+        return [MissingTestCandidate(file=f, reason=r) for _, f, r in candidates[:10]]
 
     @staticmethod
     def _detect_circular_deps(import_graph: dict[str, list[str]]) -> list[list[str]]:

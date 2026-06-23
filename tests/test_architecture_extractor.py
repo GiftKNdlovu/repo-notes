@@ -238,6 +238,162 @@ def test_dead_code_importing_file_appears(tmp_path: Path):
     assert "b.py" not in candidates  # b.py IS imported by a.py
 
 
+def test_missing_test_file_found(tmp_path: Path):
+    """Source file with a matching test file should not be a candidate."""
+    (tmp_path / "module.py").write_text("x = 1\n")
+    (tmp_path / "test_module.py").write_text("def test_x(): pass\n")
+    files = [
+        FileInfo(tmp_path / "module.py", Path("module.py"), 5, ".py", False),
+        FileInfo(tmp_path / "test_module.py", Path("test_module.py"), 20, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file for c in result.missing_test_candidates}
+    assert "module.py" not in candidates
+
+
+def test_missing_test_no_test_file(tmp_path: Path):
+    """Source file without a matching test file should be a candidate."""
+    (tmp_path / "module.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "module.py", Path("module.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.missing_test_candidates}
+    assert "module.py" in candidates
+    assert "no matching direct test file found" in candidates["module.py"].reason
+
+
+def test_missing_test_test_file_itself_excluded(tmp_path: Path):
+    """A test file itself should not be a missing-test candidate."""
+    (tmp_path / "test_foo.py").write_text("def test_x(): pass\n")
+    files = [
+        FileInfo(tmp_path / "test_foo.py", Path("test_foo.py"), 20, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file for c in result.missing_test_candidates}
+    assert "test_foo.py" not in candidates
+
+
+def test_missing_test_init_excluded(tmp_path: Path):
+    """__init__.py should not be a missing-test candidate."""
+    (tmp_path / "__init__.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "__init__.py", Path("__init__.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file for c in result.missing_test_candidates}
+    assert "__init__.py" not in candidates
+
+
+def test_missing_test_entry_point_prioritized(tmp_path: Path):
+    """Entry points without tests should rank higher (appear first)."""
+    (tmp_path / "app.py").write_text("if __name__ == '__main__':\n    pass\n")
+    (tmp_path / "helper.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "app.py", Path("app.py"), 30, ".py", False),
+        FileInfo(tmp_path / "helper.py", Path("helper.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = [c.file for c in result.missing_test_candidates]
+    # app.py (entry point) should appear before helper.py
+    assert candidates.index("app.py") < candidates.index("helper.py")
+
+
+def test_missing_test_tests_dir_pattern(tmp_path: Path):
+    """Source file with test in tests/ directory should not be a candidate."""
+    (tmp_path / "module.py").write_text("x = 1\n")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_module.py").write_text("def test_x(): pass\n")
+    files = [
+        FileInfo(tmp_path / "module.py", Path("module.py"), 5, ".py", False),
+        FileInfo(tmp_path / "tests" / "test_module.py", Path("tests/test_module.py"), 20, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file for c in result.missing_test_candidates}
+    # module.py should have a matching test in tests/
+    assert "module.py" not in candidates
+
+
+def test_test_signals_file_found(tmp_path: Path):
+    """Source file with matching test file appears in test_signals."""
+    (tmp_path / "module.py").write_text("x = 1\n")
+    (tmp_path / "test_module.py").write_text("def test_x(): pass\n")
+    files = [
+        FileInfo(tmp_path / "module.py", Path("module.py"), 5, ".py", False),
+        FileInfo(tmp_path / "test_module.py", Path("test_module.py"), 20, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    signals = {s.file: s.test_files for s in result.test_signals}
+    assert "module.py" in signals
+    assert "test_module.py" in signals["module.py"]
+
+
+def test_test_signals_import_based_matching(tmp_path: Path):
+    """Test importing a source module counts as a test signal even if filename does not match."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "cli.py").write_text("def main(): pass\n")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "runner.py").write_text("from src.cli import main\n")
+    files = [
+        FileInfo(tmp_path / "src" / "cli.py", Path("src/cli.py"), 15, ".py", False),
+        FileInfo(tmp_path / "tests" / "runner.py", Path("tests/runner.py"), 25, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    signals = {s.file: s.test_files for s in result.test_signals}
+    # runner.py imports src.cli, and 'runner' does not match stem 'cli' → import-based match
+    assert "src/cli.py" in signals
+    assert "tests/runner.py" in signals["src/cli.py"]
+
+
+def test_test_signals_import_unrelated_no_false_signal(tmp_path: Path):
+    """Test file importing only external libs does not create a false signal via import analysis."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "util.py").write_text("x = 1\n")
+    (tmp_path / "tests").mkdir()
+    # test filename does NOT match src/util.py, and imports are external
+    (tmp_path / "tests" / "runner.py").write_text("import json\nimport os\n")
+    files = [
+        FileInfo(tmp_path / "src" / "util.py", Path("src/util.py"), 5, ".py", False),
+        FileInfo(tmp_path / "tests" / "runner.py", Path("tests/runner.py"), 15, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    # filename: runner vs util → no match; imports: json/os → _resolve_target returns None
+    signals = {s.file for s in result.test_signals}
+    assert "src/util.py" not in signals
+
+
+def test_test_signals_excluded_files_skipped(tmp_path: Path):
+    """Config/generated/test files do not appear in test_signals."""
+    (tmp_path / "__init__.py").write_text("x = 1\n")
+    (tmp_path / "setup.py").write_text("from setuptools import setup\n")
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_init.py").write_text("x = 1\n")
+    (tmp_path / "tests" / "test_setup.py").write_text("import setup\n")
+    files = [
+        FileInfo(tmp_path / "__init__.py", Path("__init__.py"), 5, ".py", False),
+        FileInfo(tmp_path / "setup.py", Path("setup.py"), 20, ".py", False),
+        FileInfo(tmp_path / "tests" / "test_init.py", Path("tests/test_init.py"), 10, ".py", False),
+        FileInfo(tmp_path / "tests" / "test_setup.py", Path("tests/test_setup.py"), 15, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    signal_files = {s.file for s in result.test_signals}
+    assert "__init__.py" not in signal_files
+    assert "setup.py" not in signal_files
+
+
+def test_test_signals_missing_file_not_in_signals(tmp_path: Path):
+    """Source without a matching test is NOT in test_signals (but IS in missing_test_candidates)."""
+    (tmp_path / "orphan.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "orphan.py", Path("orphan.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    signal_files = {s.file for s in result.test_signals}
+    assert "orphan.py" not in signal_files
+    candidates = {c.file for c in result.missing_test_candidates}
+    assert "orphan.py" in candidates
+
+
 def test_dependency_across_languages(tmp_path: Path):
     (tmp_path / "app.js").write_text("import {x} from './utils';\n")
     (tmp_path / "utils.js").write_text("exports.y = 1;\n")

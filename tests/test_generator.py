@@ -159,6 +159,56 @@ def test_architecture_dead_code_candidates_rendered():
     assert "no inbound local imports" in md
 
 
+def test_architecture_missing_test_candidates_rendered():
+    gen = MarkdownGenerator(Path("root"))
+    from repo_notes.extractors.architecture import MissingTestCandidate
+    md = gen.generate(
+        arch=ArchitectureResult(
+            import_graph={"a.py": ["b"]},
+            missing_test_candidates=[
+                MissingTestCandidate(file="orphan.py", reason="no matching direct test file found"),
+            ],
+        )
+    )
+    assert "Missing Direct Test Candidates" in md
+    assert "orphan.py" in md
+    assert "no matching direct test file found" in md
+
+
+def test_architecture_missing_test_candidates_empty():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        arch=ArchitectureResult(import_graph={"a.py": ["b"]}),
+    )
+    assert "Missing Direct Test Candidates" not in md
+
+
+def test_architecture_test_signals_count_rendered():
+    gen = MarkdownGenerator(Path("root"))
+    from repo_notes.extractors.architecture import TestSignal
+    md = gen.generate(
+        arch=ArchitectureResult(
+            import_graph={"a.py": ["b"]},
+            test_signals=[
+                TestSignal(file="a.py", test_files=["test_a.py"]),
+                TestSignal(file="b.py", test_files=["test_b.py"]),
+            ],
+        )
+    )
+    assert "**2** source files have likely direct test files" in md
+    # Should not dump the full file list
+    assert "test_a.py" not in md
+    assert "test_b.py" not in md
+
+
+def test_architecture_test_signals_count_empty():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        arch=ArchitectureResult(import_graph={"a.py": ["b"]}),
+    )
+    assert "source files have likely direct test files" not in md
+
+
 def test_architecture_dead_code_candidates_empty():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(

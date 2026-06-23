@@ -223,6 +223,11 @@ class AgentsGenerator:
                 arrow_chain = " → ".join(cycle)
                 lines.append(f"  - `{arrow_chain}`")
 
+        if arch.missing_test_candidates:
+            top = arch.missing_test_candidates[:3]
+            for c in top:
+                lines.append(f"- Missing-test: `{c.file}` — {c.reason}")
+
         if arch.dead_code_candidates:
             top = arch.dead_code_candidates[:3]
             for c in top:

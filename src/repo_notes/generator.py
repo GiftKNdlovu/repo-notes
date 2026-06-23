@@ -355,6 +355,17 @@ class MarkdownGenerator:
                 lines.append(f"- `{h.file}` — {h.total} connections ({h.incoming} incoming, {h.outgoing} outgoing)")
             lines.append("")
 
+        if result.test_signals:
+            lines.append(f"- **{len(result.test_signals)}** source files have likely direct test files")
+            lines.append("")
+
+        if result.missing_test_candidates:
+            lines.append("### Missing Direct Test Candidates")
+            lines.append("")
+            for c in result.missing_test_candidates[:10]:
+                lines.append(f"- `{c.file}` — {c.reason}")
+            lines.append("")
+
         if result.dead_code_candidates:
             lines.append("### Low-Reachability Candidates")
             lines.append("")
