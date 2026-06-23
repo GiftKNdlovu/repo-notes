@@ -41,6 +41,15 @@ rnREADME.md
 .repo-notes-cache.tmp
 test_results.txt
 
+# AI / coding-agent working files
+# Hand-written planning/context docs for models; keep CLI-generated outputs above.
+PROJECT_BRIEF.md
+QUALITY_BAR.md
+DECISIONS.md
+ROADMAP.md
+TODO.md
+CHANGELOG.md
+
 # Tool artifacts (codebase-memory-mcp, Hermes, etc.)
 .codebase-memory/
 .hermes/
