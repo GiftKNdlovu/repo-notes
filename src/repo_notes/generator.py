@@ -371,6 +371,20 @@ class MarkdownGenerator:
             lines.append("")
 
         if result.import_graph:
+            import_count = sum(len(v) for v in result.import_graph.values())
+            lines.append("### Module Dependencies")
+            lines.append("")
+            m_label = "module" if len(result.import_graph) == 1 else "modules"
+            v_label = "other module" if import_count == 1 else "other modules"
+            v_verb = "imports" if len(result.import_graph) == 1 else "import"
+            lines.append(f"- **{len(result.import_graph)}** {m_label} {v_verb} **{import_count}** {v_label}")
+            if result.circular_deps:
+                lines.append(f"- **{len(result.circular_deps)}** circular dependenc{'y' if len(result.circular_deps) == 1 else 'ies'} detected")
+                for cycle in result.circular_deps:
+                    arrow_chain = " → ".join(cycle)
+                    lines.append(f"  - `{arrow_chain}`")
+            lines.append("")
+
             import_items = []
             for file_path, imports in sorted(result.import_graph.items()):
                 import_items.append(f"- `{file_path}` → {', '.join(imports[:8])}{', ...' if len(imports) > 8 else ''}")

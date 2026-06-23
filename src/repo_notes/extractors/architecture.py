@@ -25,6 +25,7 @@ class ArchitectureResult:
     layers: dict[str, list[Path]] = field(default_factory=dict)
     import_graph: dict[str, list[str]] = field(default_factory=dict)
     entry_points: list[Path] = field(default_factory=list)
+    circular_deps: list[list[str]] = field(default_factory=list)
 
 
 class ArchitectureExtractor:
@@ -61,10 +62,13 @@ class ArchitectureExtractor:
             if imports:
                 import_graph[rel.as_posix()] = imports
 
+        circular_deps = self._detect_circular_deps(import_graph)
+
         return ArchitectureResult(
             layers=dict(layers),
             import_graph=dict(import_graph),
             entry_points=entry_points,
+            circular_deps=circular_deps,
         )
 
     def _detect_layer(self, path: Path) -> str | None:
@@ -114,6 +118,41 @@ class ArchitectureExtractor:
             for match in re.finditer(r"^\s*use\s+([^;]+);", content, re.MULTILINE):
                 imports.append(match.group(1).split("::")[0])
         return imports
+
+    @staticmethod
+    def _detect_circular_deps(import_graph: dict[str, list[str]]) -> list[list[str]]:
+        nodes = set(import_graph.keys())
+        adj: dict[str, list[str]] = {n: [] for n in nodes}
+        for src, targets in import_graph.items():
+            for t in targets:
+                if t in nodes or t + ".py" in nodes:
+                    match = t if t in nodes else t + ".py"
+                    adj[src].append(match)
+
+        unvisited, in_progress, done = 0, 1, 2
+        state: dict[str, int] = {n: unvisited for n in nodes}
+        cycles: list[list[str]] = []
+
+        def dfs(node: str, stack: list[str]) -> None:
+            state[node] = in_progress
+            stack.append(node)
+            for neighbor in adj.get(node, []):
+                nb_state = state.get(neighbor, unvisited)
+                if nb_state == in_progress:
+                    idx = stack.index(neighbor)
+                    cycle = list(stack[idx:])
+                    cycle.append(neighbor)
+                    cycles.append(cycle)
+                elif nb_state == unvisited:
+                    dfs(neighbor, stack)
+            stack.pop()
+            state[node] = done
+
+        for n in sorted(nodes):
+            if state[n] == unvisited:
+                dfs(n, [])
+
+        return cycles
 
     def _read_content(self, path: Path) -> str:
         return read_text(path)

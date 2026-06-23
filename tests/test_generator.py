@@ -105,6 +105,36 @@ def test_includes_architecture():
     assert "models" in md
 
 
+def test_architecture_compact_dependency_summary():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        arch=ArchitectureResult(
+            layers={},
+            entry_points=[],
+            import_graph={"a.py": ["b"], "b.py": ["c"], "c.py": ["a"]},
+            circular_deps=[["a.py", "b.py", "c.py", "a.py"]],
+        )
+    )
+    assert "Module Dependencies" in md
+    assert "**3** modules import **3** other modules" in md
+    assert "**1** circular dependency detected" in md
+    assert "a.py → b.py → c.py → a.py" in md
+
+
+def test_architecture_no_circular_deps():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        arch=ArchitectureResult(
+            layers={},
+            entry_points=[],
+            import_graph={"a.py": ["b"]},
+        )
+    )
+    assert "Module Dependencies" in md
+    assert "**1** module imports **1** other module" in md
+    assert "circular" not in md
+
+
 def test_includes_security():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(
