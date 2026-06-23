@@ -434,17 +434,29 @@ class MarkdownGenerator:
                 lines.append(f"- `{f}` ⚠️")
             lines.append("")
 
+        has_real = False
+        has_test = False
         if result.findings:
             findings_lines = ["### Potential Secrets Detected", ""]
             findings_lines.append("| File | Type | Line | Preview |")
             findings_lines.append("|------|------|------|---------|")
             for f in result.findings[:30]:
+                is_test = f.get("test_fixture", False)
+                if is_test:
+                    has_test = True
+                else:
+                    has_real = True
+                type_label = f"{f['type']} (test fixture)" if is_test else f['type']
                 file_esc = self._escape_md_table(f['file'])
                 preview_esc = self._escape_md_table(f['preview'])
-                findings_lines.append(f"| `{file_esc}` | {f['type']} | {f['line']} | `{preview_esc}` |")
+                findings_lines.append(f"| `{file_esc}` | {type_label} | {f['line']} | `{preview_esc}` |")
             if len(result.findings) > 30:
                 findings_lines.append(f"| *...and {len(result.findings) - 30} more* | | | |")
             findings_lines.append("")
+            if has_test and not has_real:
+                findings_lines.append("> All findings above are in test/fixture files. "
+                                       "Use `exclude_test_fixtures: true` in `.repo-notes.yaml` to suppress.")
+                findings_lines.append("")
             lines.append(f"<details open>\n<summary>Potential Secrets ({len(result.findings)} detected)</summary>\n\n" + "\n".join(findings_lines) + "\n</details>")
             lines.append("")
 
@@ -675,17 +687,34 @@ class MarkdownGenerator:
         lines.append("")
 
         if result.complex_files:
-            complex_table = ["| File | Long Functions | Max Nesting | Score |", "|------|---------------|-------------|-------|"]
-            for entry in result.complex_files:
-                n_long = len(entry["long_functions"])
-                file_esc = self._escape_md_table(entry['file'])
-                complex_table.append(f"| `{file_esc}` | {n_long} | {entry['max_nesting']} | {entry['score']} |")
-            complex_table.append("")
-            lines.append(self._collapse(
-                f"Complex Files ({len(result.complex_files)})",
-                "\n".join(complex_table),
-            ))
-            lines.append("")
+            source_entries = [e for e in result.complex_files if not e.get("test_file")]
+            test_entries = [e for e in result.complex_files if e.get("test_file")]
+
+            if source_entries:
+                table = ["| File | Long Functions | Max Nesting | Score |", "|------|---------------|-------------|-------|"]
+                for entry in source_entries[:15]:
+                    n_long = len(entry["long_functions"])
+                    file_esc = self._escape_md_table(entry['file'])
+                    table.append(f"| `{file_esc}` | {n_long} | {entry['max_nesting']} | {entry['score']} |")
+                table.append("")
+                lines.append(self._collapse(
+                    f"Complex Files — Source ({len(source_entries)})",
+                    "\n".join(table),
+                ))
+                lines.append("")
+
+            if test_entries:
+                test_table = ["| File | Long Functions | Max Nesting | Score |", "|------|---------------|-------------|-------|"]
+                for entry in test_entries[:10]:
+                    n_long = len(entry["long_functions"])
+                    file_esc = self._escape_md_table(entry['file'])
+                    test_table.append(f"| `{file_esc}` | {n_long} | {entry['max_nesting']} | {entry['score']} |")
+                test_table.append("")
+                lines.append(self._collapse(
+                    f"Complex Files — Test ({len(test_entries)})",
+                    "\n".join(test_table),
+                ))
+                lines.append("")
         else:
             lines.append("No complex files detected.")
 

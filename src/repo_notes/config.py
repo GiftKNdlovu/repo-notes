@@ -33,6 +33,7 @@ class ExtractorConfig:
 class SecurityConfig:
     entropy_threshold: float = 4.5
     patterns: list[str] = field(default_factory=list)
+    exclude_test_fixtures: bool = False
 
 
 @dataclass
@@ -154,6 +155,7 @@ class Config:
             "security": {
                 "entropy_threshold": self.security.entropy_threshold,
                 "patterns": self.security.patterns,
+                "exclude_test_fixtures": self.security.exclude_test_fixtures,
             },
             "structure": {
                 "max_depth": self.structure.max_depth,

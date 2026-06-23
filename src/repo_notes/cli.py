@@ -170,7 +170,7 @@ def _find_git_root(path: Path) -> Path | None:
     "--force",
     is_flag=True,
     default=False,
-    help="Overwrite existing README.md (only with --replace-readme)",
+    help="Overwrite existing output file (needed with --replace-readme or when --output target exists)",
 )
 @click.option(
     "--quiet", "-q",
@@ -194,7 +194,7 @@ def _find_git_root(path: Path) -> Path | None:
     "--replace-readme",
     is_flag=True,
     default=False,
-    help="Write to README.md instead of rnREADME.md",
+    help="Write to README.md instead of rnREADME.md (requires --force if README.md exists)",
 )
 @click.option(
     "--agents",
@@ -206,8 +206,13 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
     """Scan REPO_PATH and generate project notes.
 
     By default, generates REPO_NOTES.md with detailed technical notes.
-    Use --format readme to generate a rnREADME.md instead (safe for existing READMEs).
-    Use --format readme --replace-readme to write to README.md directly.
+    README.md is treated as hand-written project documentation and is never
+    overwritten by default. Use --format readme to generate a starter rnREADME.md
+    alongside your existing hand-written README.
+
+    Use --format readme --replace-readme --force to overwrite README.md with
+    generated output (destructive -- use with care).
+
     Use --output to set a custom path for single-artifact formats (notes, readme,
     html, json, agents). With --format both, --output controls the notes file and
     readme is written as a sibling.
@@ -270,10 +275,10 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
     if cfg.output.format in ("readme", "both") and readme_output.exists() and not force:
         if output:
             err_console.print(f"[yellow]{readme_output} already exists. Use --force to overwrite.[/yellow]")
-            return
+            raise SystemExit(1)
         if replace_readme:
             err_console.print("[yellow]README.md already exists. Use --force to overwrite.[/yellow]")
-            return
+            raise SystemExit(1)
 
     progress_console = Console(file=open(os.devnull, "w")) if quiet else console
 
@@ -314,7 +319,11 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
         if cfg.extractors.architecture:
             extractors.append(("arch", ArchitectureExtractor(), files))
         if cfg.extractors.security:
-            extractors.append(("security", SecurityExtractor(entropy_threshold=cfg.security.entropy_threshold, patterns=cfg.security.patterns), files))
+            extractors.append(("security", SecurityExtractor(
+                entropy_threshold=cfg.security.entropy_threshold,
+                patterns=cfg.security.patterns,
+                exclude_test_fixtures=cfg.security.exclude_test_fixtures,
+            ), files))
         if cfg.extractors.todos:
             extractors.append(("todos", TodosExtractor(), files))
         if cfg.extractors.scripts:

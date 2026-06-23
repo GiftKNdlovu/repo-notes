@@ -10,12 +10,23 @@ from repo_notes.scanner import FileInfo
 COMPLEXITY_THRESHOLD = 10  # minimum function length to flag
 MAX_NESTING_WARN = 4       # nesting depth beyond this is flagged
 
+TEST_PATH_PATTERNS: list[re.Pattern] = [
+    re.compile(r"(?:^|/)tests?/"),
+    re.compile(r"/test_[^/]+\.\w+$"),
+    re.compile(r"/[Tt]est[A-Z][^/]*\.\w+$"),
+    re.compile(r"/__pycache__/"),
+]
+
 
 @dataclass(slots=True)
 class ComplexityResult:
     complex_files: list[dict] = field(default_factory=list)
     avg_function_length: float = 0.0
     max_nesting: int = 0
+
+
+def _is_test_file(rel_path: str) -> bool:
+    return any(p.search(rel_path) for p in TEST_PATH_PATTERNS)
 
 
 class ComplexityExtractor:
@@ -46,9 +57,11 @@ class ComplexityExtractor:
                     "long_functions": flagged,
                     "max_nesting": max_nest,
                     "score": sum(flagged) + max_nest * 2,
+                    "test_file": _is_test_file(f.relative_path.as_posix()),
                 })
 
-        complex_files.sort(key=lambda x: x["score"], reverse=True)
+        # Sort source files first (by score descending), then test files (by score)
+        complex_files.sort(key=lambda x: (1 if x.get("test_file") else 0, -x["score"]))
         avg = sum(all_fn_lengths) / len(all_fn_lengths) if all_fn_lengths else 0.0
 
         return ComplexityResult(

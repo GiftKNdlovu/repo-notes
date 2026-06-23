@@ -258,3 +258,111 @@ def test_agents_default_uses_repo_root():
         agents_path = root / "AGENTS.md"
         assert agents_path.exists()
         assert "## Key Commands" in agents_path.read_text()
+
+
+def test_both_format_fails_on_existing_sibling():
+    """--format both --output exits non-zero when sibling rnREADME.md exists without --force."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "main.py").write_text("def main(): pass\n")
+        # Create sibling rnREADME.md
+        sibling = root / "rnREADME.md"
+        sibling.write_text("existing content")
+
+        notes_path = root / "my_notes.md"
+        result = subprocess.run(
+            ["repo-notes", str(root), "--format", "both", "--output", str(notes_path)],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0, "should exit non-zero when sibling exists"
+        assert "already exists" in result.stderr
+        # Notes should NOT have been written (early exit before write)
+        assert not notes_path.exists()
+
+
+def test_both_format_with_force_writes_both():
+    """--format both --output --force writes both artifacts when sibling exists."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "main.py").write_text("def main(): pass\n")
+        # Create sibling rnREADME.md
+        sibling = root / "rnREADME.md"
+        sibling.write_text("existing content")
+
+        notes_path = root / "my_notes.md"
+        result = subprocess.run(
+            ["repo-notes", str(root), "--format", "both", "--output", str(notes_path), "--force"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert notes_path.exists()
+        assert sibling.exists()
+        assert "# Repository Notes:" in notes_path.read_text()
+
+
+def test_no_readme_overwrite_without_replace_readme():
+    """Default commands should never modify hand-written README.md."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / "main.py").write_text("def main(): pass\n")
+        (root / "README.md").write_text("Hand-written README content")
+        original = (root / "README.md").read_text()
+
+        # Run default notes format — should not touch README.md
+        result = subprocess.run(
+            ["repo-notes", str(root)],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert (root / "README.md").read_text() == original
+
+        # Run readme format (writes rnREADME.md, not README.md)
+        result2 = subprocess.run(
+            ["repo-notes", str(root), "--format", "readme"],
+            capture_output=True,
+            text=True,
+        )
+        assert result2.returncode == 0
+        assert (root / "README.md").read_text() == original
+        assert (root / "rnREADME.md").exists()
+
+
+def test_exclude_test_fixtures_in_config():
+    """Security findings in test files can be suppressed with config."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        # Create a test file with a fake secret
+        test_dir = root / "tests"
+        test_dir.mkdir()
+        (test_dir / "test_config.py").write_text(
+            'aws_access_key_id = "AKIAIOSFODNN7EXAMPLE"\n'
+        )
+        # Create a real source file with a secret
+        src_dir = root / "src"
+        src_dir.mkdir()
+        (src_dir / "config.py").write_text(
+            'aws_access_key_id = "AKIAIOSFODNN7REALKEY"\n'
+        )
+        # Also create a .repo-notes.yaml with exclude_test_fixtures
+        (root / ".repo-notes.yaml").write_text(
+            "security:\n  exclude_test_fixtures: true\n"
+        )
+
+        result = subprocess.run(
+            ["repo-notes", str(root), "--format", "json", "--no-cache", "--quiet"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        import json
+        data = json.loads((root / "REPO_NOTES.json").read_text())
+        sec = data.get("security", {})
+        findings = sec.get("findings", [])
+        # Real secret should be found, test fixture secret should be suppressed
+        src_findings = [f for f in findings if "src/config.py" in f.get("file", "")]
+        test_findings = [f for f in findings if "tests/test_config.py" in f.get("file", "")]
+        assert len(src_findings) >= 1, "real source secret should still be reported"
+        assert len(test_findings) == 0, "test fixture secrets should be suppressed with exclude_test_fixtures"

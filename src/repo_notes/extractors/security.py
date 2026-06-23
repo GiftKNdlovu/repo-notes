@@ -8,6 +8,17 @@ from pathlib import Path
 from repo_notes.file_cache import read_text
 from repo_notes.scanner import FileInfo
 
+# Path patterns that indicate a file is likely a test fixture.
+# Findings in these files are flagged as test fixtures.
+TEST_FIXTURE_PATTERNS: list[re.Pattern] = [
+    re.compile(r"(?:^|/)tests?/"),
+    re.compile(r"(?:^|/)fixtures?/"),
+    re.compile(r"(?:^|/)samples?/"),
+    re.compile(r"(?:^|/)examples?/"),
+    re.compile(r"/test_[^/]+$"),
+    re.compile(r"/[Tt]est[A-Z][^/]*\.\w+$"),
+]
+
 SECRET_PATTERNS = [
     (r"aws_access_key_id\s*[:=]\s*['\"]?([A-Z0-9]{20})['\"]?", "AWS Access Key"),
     (r"aws_secret_access_key\s*[:=]\s*['\"]?([A-Za-z0-9/+=]{40})['\"]?", "AWS Secret Key"),
@@ -48,8 +59,14 @@ class SecurityResult:
 
 
 class SecurityExtractor:
-    def __init__(self, entropy_threshold: float = 4.5, patterns: list[str] | None = None):
+    def __init__(
+        self,
+        entropy_threshold: float = 4.5,
+        patterns: list[str] | None = None,
+        exclude_test_fixtures: bool = False,
+    ):
         self.entropy_threshold = entropy_threshold
+        self.exclude_test_fixtures = exclude_test_fixtures
         self._compiled_patterns = [(re.compile(p, re.IGNORECASE), name) for p, name in SECRET_PATTERNS]
         if patterns:
             for p in patterns:
@@ -58,10 +75,14 @@ class SecurityExtractor:
                 except re.error:
                     pass
 
+    def _is_test_fixture(self, rel_path: str) -> bool:
+        return any(p.search(rel_path) for p in TEST_FIXTURE_PATTERNS)
+
     def extract(self, root: Path, files: list[FileInfo]) -> SecurityResult:
         findings = []
         env_files = []
         high_entropy = []
+        excluded_count = 0
 
         for f in files:
             if f.is_binary:
@@ -78,25 +99,36 @@ class SecurityExtractor:
             if not content:
                 continue
 
+            rel_str = rel.as_posix()
+            is_test = self._is_test_fixture(rel_str)
+
             # Pattern-based detection
             for pattern, name in self._compiled_patterns:
                 for match in pattern.finditer(content):
+                    if is_test and self.exclude_test_fixtures:
+                        excluded_count += 1
+                        continue
                     findings.append({
-                        "file": rel.as_posix(),
+                        "file": rel_str,
                         "type": name,
                         "line": self._get_line_number(content, match.start()),
                         "preview": self._redact(match.group(0)),
+                        "test_fixture": is_test,
                     })
 
             # Entropy-based detection
             for match in re.finditer(r"[a-zA-Z0-9/+=]{20,}", content):
                 entropy = self._shannon_entropy(match.group(0))
                 if entropy >= self.entropy_threshold:
+                    if is_test and self.exclude_test_fixtures:
+                        excluded_count += 1
+                        continue
                     high_entropy.append({
-                        "file": rel.as_posix(),
+                        "file": rel_str,
                         "entropy": round(entropy, 2),
                         "line": self._get_line_number(content, match.start()),
                         "preview": self._redact(match.group(0)[:50]),
+                        "test_fixture": is_test,
                     })
 
         return SecurityResult(
