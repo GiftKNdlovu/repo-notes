@@ -5,6 +5,11 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised on Python < 3.11
+    import tomli as tomllib
+
 from repo_notes.scanner import FileInfo
 
 
@@ -72,7 +77,6 @@ class ScriptsExtractor:
 
     def _parse_pyproject_scripts(self, path: Path) -> dict[str, str]:
         try:
-            import tomllib
             with path.open("rb") as f:
                 data = tomllib.load(f)
             result = {}
