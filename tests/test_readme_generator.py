@@ -309,7 +309,7 @@ def test_cli_readme_replace_respects_existing():
             capture_output=True,
             text=True,
         )
-        assert "already exists" in result.stdout
+        assert "already exists" in result.stderr
 
 
 def test_cli_readme_default_ignores_existing_readme():
