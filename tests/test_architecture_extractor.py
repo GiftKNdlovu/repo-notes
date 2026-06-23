@@ -130,6 +130,114 @@ def test_coupling_hotspots_incoming_counted(tmp_path: Path):
     assert hotspots["b.py"].total == 3
 
 
+def test_dead_code_true_unreferenced(tmp_path: Path):
+    (tmp_path / "importer.py").write_text("import orphan\n")
+    (tmp_path / "orphan.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "importer.py", Path("importer.py"), 10, ".py", False),
+        FileInfo(tmp_path / "orphan.py", Path("orphan.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    # importer.py has no inbound imports → candidate; orphan.py is imported → not a candidate
+    assert "importer.py" in candidates
+    assert "no inbound local imports" in candidates["importer.py"].reason
+    assert "orphan.py" not in candidates
+
+
+def test_dead_code_entry_point_excluded(tmp_path: Path):
+    (tmp_path / "app.py").write_text("if __name__ == '__main__':\n    pass\n")
+    (tmp_path / "orphan.py").write_text("import app\n")
+    files = [
+        FileInfo(tmp_path / "app.py", Path("app.py"), 30, ".py", False),
+        FileInfo(tmp_path / "orphan.py", Path("orphan.py"), 10, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "app.py" not in candidates  # entry point excluded
+    assert "orphan.py" in candidates  # no inbound imports
+
+
+def test_dead_code_test_file_excluded(tmp_path: Path):
+    (tmp_path / "test_foo.py").write_text("def test_x(): pass\n")
+    (tmp_path / "prod.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "test_foo.py", Path("test_foo.py"), 20, ".py", False),
+        FileInfo(tmp_path / "prod.py", Path("prod.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "test_foo.py" not in candidates  # test file excluded
+    assert "prod.py" in candidates  # no inbound imports
+
+
+def test_dead_code_init_excluded(tmp_path: Path):
+    (tmp_path / "__init__.py").write_text("x = 1\n")
+    (tmp_path / "orphan.py").write_text("def f(): pass\n")
+    files = [
+        FileInfo(tmp_path / "__init__.py", Path("__init__.py"), 5, ".py", False),
+        FileInfo(tmp_path / "orphan.py", Path("orphan.py"), 15, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "__init__.py" not in candidates  # init file excluded
+    assert "orphan.py" in candidates  # no inbound imports
+
+
+def test_dead_code_scripts_dir_excluded(tmp_path: Path):
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts" / "tool.py").write_text("def run(): pass\n")
+    (tmp_path / "orphan.py").write_text("def f(): pass\n")
+    files = [
+        FileInfo(tmp_path / "scripts" / "tool.py", Path("scripts/tool.py"), 15, ".py", False),
+        FileInfo(tmp_path / "orphan.py", Path("orphan.py"), 10, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "scripts/tool.py" not in candidates  # under scripts/ dir → excluded
+    assert "orphan.py" in candidates
+
+
+def test_dead_code_config_dir_excluded(tmp_path: Path):
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "settings.py").write_text("DEBUG = True\n")
+    (tmp_path / "orphan.py").write_text("def f(): pass\n")
+    files = [
+        FileInfo(tmp_path / "config" / "settings.py", Path("config/settings.py"), 20, ".py", False),
+        FileInfo(tmp_path / "orphan.py", Path("orphan.py"), 10, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "config/settings.py" not in candidates  # under config/ dir → excluded
+    assert "orphan.py" in candidates
+
+
+def test_dead_code_imported_file_not_listed(tmp_path: Path):
+    (tmp_path / "importer.py").write_text("import target\n")
+    (tmp_path / "target.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "importer.py", Path("importer.py"), 10, ".py", False),
+        FileInfo(tmp_path / "target.py", Path("target.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "target.py" not in candidates  # target.py IS imported by importer.py
+
+
+def test_dead_code_importing_file_appears(tmp_path: Path):
+    """A file that imports others but is not itself imported is a candidate."""
+    (tmp_path / "a.py").write_text("import b\n")
+    (tmp_path / "b.py").write_text("x = 1\n")
+    files = [
+        FileInfo(tmp_path / "a.py", Path("a.py"), 10, ".py", False),
+        FileInfo(tmp_path / "b.py", Path("b.py"), 5, ".py", False),
+    ]
+    result = ArchitectureExtractor().extract(tmp_path, files)
+    candidates = {c.file: c for c in result.dead_code_candidates}
+    assert "a.py" in candidates  # a.py has no inbound imports
+    assert "b.py" not in candidates  # b.py IS imported by a.py
+
+
 def test_dependency_across_languages(tmp_path: Path):
     (tmp_path / "app.js").write_text("import {x} from './utils';\n")
     (tmp_path / "utils.js").write_text("exports.y = 1;\n")

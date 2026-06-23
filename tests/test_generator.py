@@ -141,6 +141,32 @@ def test_architecture_coupling_hotspots_rendered():
     assert "0 incoming, 2 outgoing" in md or "2 outgoing, 0 incoming" in md
 
 
+def test_architecture_dead_code_candidates_rendered():
+    gen = MarkdownGenerator(Path("root"))
+    from repo_notes.extractors.architecture import DeadCodeCandidate
+    md = gen.generate(
+        arch=ArchitectureResult(
+            layers={},
+            entry_points=[],
+            import_graph={"a.py": ["b"]},
+            dead_code_candidates=[
+                DeadCodeCandidate(file="orphan.py", reason="no inbound local imports; no outbound local imports"),
+            ],
+        )
+    )
+    assert "Low-Reachability Candidates" in md
+    assert "orphan.py" in md
+    assert "no inbound local imports" in md
+
+
+def test_architecture_dead_code_candidates_empty():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        arch=ArchitectureResult(import_graph={"a.py": ["b"]}),
+    )
+    assert "Low-Reachability Candidates" not in md
+
+
 def test_architecture_coupling_hotspots_empty():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(

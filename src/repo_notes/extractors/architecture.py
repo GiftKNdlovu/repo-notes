@@ -29,12 +29,19 @@ class CouplingHotspot:
 
 
 @dataclass(slots=True)
+class DeadCodeCandidate:
+    file: str
+    reason: str
+
+
+@dataclass(slots=True)
 class ArchitectureResult:
     layers: dict[str, list[Path]] = field(default_factory=dict)
     import_graph: dict[str, list[str]] = field(default_factory=dict)
     entry_points: list[Path] = field(default_factory=list)
     circular_deps: list[list[str]] = field(default_factory=list)
     coupling_hotspots: list[CouplingHotspot] = field(default_factory=list)
+    dead_code_candidates: list[DeadCodeCandidate] = field(default_factory=list)
 
 
 class ArchitectureExtractor:
@@ -46,6 +53,8 @@ class ArchitectureExtractor:
         import_graph: dict[str, list[str]] = defaultdict(list)
         entry_points: list[Path] = []
 
+        source_files: set[str] = set()
+
         for f in files:
             if f.is_binary:
                 continue
@@ -55,6 +64,7 @@ class ArchitectureExtractor:
                 continue
 
             rel = f.relative_path
+            source_files.add(rel.as_posix())
             content = self._read_content(f.path)
 
             # Detect layer from path
@@ -73,8 +83,10 @@ class ArchitectureExtractor:
 
         circular_deps = self._detect_circular_deps(import_graph)
 
-        known_files = {f.relative_path.as_posix() for f in files if not f.is_binary}
-        coupling_hotspots = self._compute_coupling_hotspots(import_graph, known_files)
+        coupling_hotspots = self._compute_coupling_hotspots(import_graph, source_files)
+        dead_code_candidates = self._compute_dead_code_candidates(
+            files, import_graph, entry_points, source_files,
+        )
 
         return ArchitectureResult(
             layers=dict(layers),
@@ -82,6 +94,7 @@ class ArchitectureExtractor:
             entry_points=entry_points,
             circular_deps=circular_deps,
             coupling_hotspots=coupling_hotspots,
+            dead_code_candidates=dead_code_candidates,
         )
 
     def _detect_layer(self, path: Path) -> str | None:
@@ -137,22 +150,6 @@ class ArchitectureExtractor:
         import_graph: dict[str, list[str]],
         known_files: set[str],
     ) -> list[CouplingHotspot]:
-        def _resolve(target: str) -> str | None:
-            if target in known_files:
-                return target
-            if target + ".py" in known_files:
-                return target + ".py"
-            name = target.split(".")[-1]
-            if name + ".py" in known_files:
-                return name + ".py"
-            stem = target.replace(".", "/")
-            for kf in known_files:
-                if kf == stem or kf == stem + ".py":
-                    return kf
-                if kf.endswith("/" + stem) or kf.endswith("/" + stem + ".py"):
-                    return kf
-            return None
-
         outgoing: dict[str, int] = {}
         incoming: dict[str, int] = {}
         all_modules: set[str] = set()
@@ -160,7 +157,7 @@ class ArchitectureExtractor:
         for src, targets in import_graph.items():
             local_targets = []
             for t in targets:
-                resolved = _resolve(t)
+                resolved = ArchitectureExtractor._resolve_target(t, known_files)
                 if resolved:
                     local_targets.append(resolved)
             outgoing[src] = len(local_targets)
@@ -185,6 +182,91 @@ class ArchitectureExtractor:
 
         hotspots.sort(key=lambda h: (-h.total, -h.outgoing, h.file))
         return hotspots[:10]
+
+    @staticmethod
+    def _is_excluded_from_dead_code(rel: str) -> bool:
+        """Check if a file should be excluded from dead-code candidate reporting."""
+        name = Path(rel).name
+        parts = rel.replace("\\", "/").split("/")
+        # Package init files
+        if name == "__init__.py":
+            return True
+        # Test files and directories
+        if name.startswith("test_") or name.endswith("_test.py"):
+            return True
+        if any(p in ("tests", "specs", "__test__") for p in parts):
+            return True
+        # CLI / entry-point filenames
+        if name in ("cli.py", "__main__.py", "main.py", "app.py", "manage.py", "run.py", "server.py", "setup.py"):
+            return True
+        # Config and build files
+        if name in ("setup.cfg", "setup.py", "pyproject.toml", "Makefile", "Dockerfile", "docker-compose.yml", ".env.example"):
+            return True
+        # Generated / doc artifacts
+        if name in ("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE", "AGENTS.md", "REPO_NOTES.md"):
+            return True
+        # Directories known to be non-production
+        if any(p in ("scripts", "benchmarks", "migrations", "alembic", "docs", "config") for p in parts):
+            return True
+        return False
+
+    @staticmethod
+    def _resolve_target(target: str, known_files: set[str]) -> str | None:
+        """Resolve an import target string to a known project file path."""
+        if target in known_files:
+            return target
+        if target + ".py" in known_files:
+            return target + ".py"
+        name = target.split(".")[-1]
+        if name + ".py" in known_files:
+            return name + ".py"
+        stem = target.replace(".", "/")
+        for kf in known_files:
+            if kf == stem or kf == stem + ".py":
+                return kf
+            if kf.endswith("/" + stem) or kf.endswith("/" + stem + ".py"):
+                return kf
+        return None
+
+    @staticmethod
+    def _compute_dead_code_candidates(
+        files: list[FileInfo],
+        import_graph: dict[str, list[str]],
+        entry_points: list[Path],
+        known_files: set[str],
+    ) -> list[DeadCodeCandidate]:
+        entry_paths = {p.as_posix() for p in entry_points}
+
+        incoming: dict[str, int] = {}
+        for src, targets in import_graph.items():
+            for t in targets:
+                resolved = ArchitectureExtractor._resolve_target(t, known_files)
+                if resolved:
+                    incoming[resolved] = incoming.get(resolved, 0) + 1
+
+        candidates: list[DeadCodeCandidate] = []
+        for f in files:
+            if f.is_binary:
+                continue
+            rel = f.relative_path.as_posix()
+            if rel not in known_files:
+                continue
+            if incoming.get(rel, 0) > 0:
+                continue
+            if rel in entry_paths:
+                continue
+            if ArchitectureExtractor._is_excluded_from_dead_code(rel):
+                continue
+
+            outbound = len(import_graph.get(rel, []))
+            if outbound == 0:
+                reason = "no inbound local imports; no outbound local imports"
+            else:
+                reason = f"no inbound local imports; {outbound} outbound local import{'s' if outbound != 1 else ''}"
+            candidates.append(DeadCodeCandidate(file=rel, reason=reason))
+
+        candidates.sort(key=lambda c: c.file)
+        return candidates[:10]
 
     @staticmethod
     def _detect_circular_deps(import_graph: dict[str, list[str]]) -> list[list[str]]:

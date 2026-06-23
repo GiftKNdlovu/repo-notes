@@ -120,12 +120,13 @@ tests/
 
 ## Architecture
 
-- **66** modules import **306** other modules
+- **66** modules import **308** other modules
 - `src/repo_notes/scanner.py` — 33 connections (33 in, 0 out)
 - `tests/test_detectors.py` — 15 connections (0 in, 15 out)
-- `src/repo_notes/file_cache.py` — 10 connections (10 in, 0 out)
+- `src/repo_notes/extractors/architecture.py` — 10 connections (8 in, 2 out)
 - **3** layers detected: config, routes, tests
 - Entry points: tests/test_integration.py, src/repo_notes/__main__.py, src/repo_notes/cli.py, benchmarks/benchmark.py
+- Low-reachability: `src/repo_notes/detectors/base.py` — no inbound local imports; 3 outbound local imports
 
 ## Key Commands
 

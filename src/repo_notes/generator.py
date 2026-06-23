@@ -355,6 +355,16 @@ class MarkdownGenerator:
                 lines.append(f"- `{h.file}` — {h.total} connections ({h.incoming} incoming, {h.outgoing} outgoing)")
             lines.append("")
 
+        if result.dead_code_candidates:
+            lines.append("### Low-Reachability Candidates")
+            lines.append("")
+            lines.append("> These source files have no inbound local imports and are not")
+            lines.append("> obvious entry points, tests, config, or generated files.")
+            lines.append("")
+            for c in result.dead_code_candidates[:5]:
+                lines.append(f"- `{c.file}` — {c.reason}")
+            lines.append("")
+
         if result.layers:
             layer_lines = ["### Detected Layers", ""]
             for layer, files in sorted(result.layers.items()):

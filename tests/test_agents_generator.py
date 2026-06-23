@@ -160,6 +160,21 @@ def test_architecture_with_coupling_hotspots():
     assert "a.py" in arch_section
 
 
+def test_architecture_with_dead_code_candidates():
+    gen = AgentsGenerator(Path("root"))
+    from repo_notes.extractors.architecture import DeadCodeCandidate
+    arch = ArchitectureResult(
+        import_graph={"a.py": ["b"]},
+        dead_code_candidates=[
+            DeadCodeCandidate(file="orphan.py", reason="no inbound local imports; no outbound local imports"),
+        ],
+    )
+    md = gen.generate(arch=arch)
+    arch_section = md.split("## Architecture", 1)[1].split("## Key Commands", 1)[0]
+    assert "Low-reachability" in arch_section
+    assert "orphan.py" in arch_section
+
+
 def test_architecture_with_layers_only():
     gen = AgentsGenerator(Path("root"))
     arch = ArchitectureResult(
