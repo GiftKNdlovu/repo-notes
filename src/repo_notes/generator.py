@@ -166,15 +166,25 @@ class MarkdownGenerator:
             if langs:
                 parts.append(f"**{langs}** languages")
         if security:
-            high = len(security.findings)
-            mild = len(security.high_entropy_strings)
+            real_high = sum(1 for f in security.findings if not f.get("test_fixture"))
+            fixture_high = sum(1 for f in security.findings if f.get("test_fixture"))
+            real_mild = sum(1 for f in security.high_entropy_strings if not f.get("test_fixture"))
+            fixture_mild = sum(1 for f in security.high_entropy_strings if f.get("test_fixture"))
             labels = []
-            if high:
-                labels.append(f"**{high}** high")
-            if mild:
-                labels.append(f"**{mild}** mild")
-            if not high and not mild:
+            if real_high == 0 and real_mild == 0 and fixture_high == 0 and fixture_mild == 0:
                 labels.append("**0** issues")
+            else:
+                if real_high or real_mild:
+                    if real_high:
+                        labels.append(f"**{real_high}** high")
+                    if real_mild:
+                        labels.append(f"**{real_mild}** mild")
+                else:
+                    labels.append("**0** real")
+                if fixture_high:
+                    labels.append(f"**{fixture_high}** fixture high")
+                if fixture_mild:
+                    labels.append(f"**{fixture_mild}** fixture mild")
             parts.append(" · ".join(labels))
         if git and git.is_repo:
             parts.append(f"branch **{git.current_branch}**")

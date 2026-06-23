@@ -192,13 +192,13 @@ def test_security_badge_high():
     gen = HtmlGenerator(Path("proj"))
     html = gen.generate(
         security=SecurityResult(
-            findings=[{"file": "x.py", "type": "Key", "line": 1, "preview": "sk-****"}],
+            findings=[{"file": "x.py", "type": "Key", "line": 1, "preview": "sk-****", "test_fixture": False}],
             env_files=[],
         ),
         stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
     )
     assert "badge-danger" in html
-    assert "high" in html
+    assert ">1 high<" in html
 
 
 def test_security_badge_mild():
@@ -206,13 +206,13 @@ def test_security_badge_mild():
     html = gen.generate(
         security=SecurityResult(
             findings=[],
-            high_entropy_strings=[{"file": "x.py", "entropy": 4.5, "line": 1, "preview": "abc"}],
+            high_entropy_strings=[{"file": "x.py", "entropy": 4.5, "line": 1, "preview": "abc", "test_fixture": False}],
             env_files=[],
         ),
         stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
     )
     assert "badge-warning" in html
-    assert "mild" in html
+    assert ">1 mild<" in html
 
 
 def test_security_badge_none():
@@ -223,6 +223,41 @@ def test_security_badge_none():
     )
     assert "badge-success" in html
     assert "0 issues" in html
+
+
+def test_security_badge_fixture_only():
+    gen = HtmlGenerator(Path("proj"))
+    html = gen.generate(
+        security=SecurityResult(
+            findings=[{"file": "tests/x.py", "type": "Key", "line": 1, "preview": "sk-****", "test_fixture": True}],
+            high_entropy_strings=[{"file": "tests/y.py", "entropy": 4.5, "line": 1, "preview": "abc123", "test_fixture": True}],
+            env_files=[],
+        ),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+    )
+    assert "0 real" in html
+    assert "1 fixture high" in html
+    assert "1 fixture mild" in html
+
+
+def test_security_badge_mixed():
+    gen = HtmlGenerator(Path("proj"))
+    html = gen.generate(
+        security=SecurityResult(
+            findings=[
+                {"file": "config.py", "type": "Key", "line": 1, "preview": "sk-****", "test_fixture": False},
+                {"file": "tests/test_keys.py", "type": "Key", "line": 5, "preview": "sk-****", "test_fixture": True},
+            ],
+            high_entropy_strings=[
+                {"file": "main.py", "entropy": 4.5, "line": 1, "preview": "abc123", "test_fixture": False},
+            ],
+            env_files=[],
+        ),
+        stats=StatsResult(total_files=1, total_lines=10, total_size=100, by_language={}, largest_files=[]),
+    )
+    assert ">1 high<" in html
+    assert ">1 fixture high<" in html
+    assert ">1 mild<" in html
 
 
 def test_tree_nested_directories():

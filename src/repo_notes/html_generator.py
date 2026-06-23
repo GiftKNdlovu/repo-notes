@@ -169,14 +169,23 @@ class HtmlGenerator:
             if langs:
                 parts.append(f'<span class="badge">{langs} languages</span>')
         if security:
-            high = len(security.findings)
-            mild = len(security.high_entropy_strings)
-            if high:
-                parts.append(f'<span class="badge badge-danger">{high} high</span>')
-            if mild:
-                parts.append(f'<span class="badge badge-warning">{mild} mild</span>')
-            if not high and not mild:
+            real_high = sum(1 for f in security.findings if not f.get("test_fixture"))
+            fixture_high = sum(1 for f in security.findings if f.get("test_fixture"))
+            real_mild = sum(1 for f in security.high_entropy_strings if not f.get("test_fixture"))
+            fixture_mild = sum(1 for f in security.high_entropy_strings if f.get("test_fixture"))
+            if real_high == 0 and real_mild == 0 and fixture_high == 0 and fixture_mild == 0:
                 parts.append('<span class="badge badge-success">0 issues</span>')
+            else:
+                if real_high:
+                    parts.append(f'<span class="badge badge-danger">{real_high} high</span>')
+                if real_mild:
+                    parts.append(f'<span class="badge badge-warning">{real_mild} mild</span>')
+                if real_high == 0 and real_mild == 0 and (fixture_high or fixture_mild):
+                    parts.append('<span class="badge badge-success">0 real</span>')
+                if fixture_high:
+                    parts.append(f'<span class="badge badge-danger">{fixture_high} fixture high</span>')
+                if fixture_mild:
+                    parts.append(f'<span class="badge badge-warning">{fixture_mild} fixture mild</span>')
         if git and git.is_repo:
             parts.append(f'<span class="badge badge-success">branch {git.current_branch}</span>')
         return BADGES_HTML.format(badges=" ".join(parts)) if parts else ""
