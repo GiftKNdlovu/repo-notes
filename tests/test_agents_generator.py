@@ -8,6 +8,7 @@ from pathlib import Path
 
 from repo_notes.agents_generator import AgentsGenerator
 from repo_notes.cli import _json_convert
+from repo_notes.extractors.architecture import ArchitectureResult
 from repo_notes.extractors.readme_data import ReadmeData
 from repo_notes.extractors.scripts import ScriptsResult
 from repo_notes.extractors.stats import StatsResult
@@ -117,6 +118,43 @@ def test_repo_map_file_labels():
     for line in repo_map.split("\n"):
         if "unknown_file.x" in line:
             assert "—" not in line
+
+
+def test_architecture_omitted_when_no_data():
+    gen = AgentsGenerator(Path("root"))
+    md = gen.generate()
+    assert "## Architecture" not in md
+
+
+def test_architecture_with_circular_deps():
+    gen = AgentsGenerator(Path("root"))
+    arch = ArchitectureResult(
+        layers={},
+        import_graph={"mod_a.py": ["mod_b"], "mod_b.py": ["mod_c"], "mod_c.py": ["mod_a"]},
+        entry_points=[],
+        circular_deps=[["mod_a.py", "mod_b.py", "mod_c.py", "mod_a.py"]],
+    )
+    md = gen.generate(arch=arch)
+    arch_section = md.split("## Architecture", 1)[1].split("## Key Commands", 1)[0]
+    assert "**1** circular dependency detected" in arch_section
+    assert "mod_a.py" in arch_section
+    assert "mod_b.py" in arch_section
+    assert "mod_c.py" in arch_section
+
+
+def test_architecture_with_layers_only():
+    gen = AgentsGenerator(Path("root"))
+    arch = ArchitectureResult(
+        layers={"routes": [Path("routes/")], "models": [Path("models/")]},
+        import_graph={},
+        entry_points=[],
+        circular_deps=[],
+    )
+    md = gen.generate(arch=arch)
+    arch_section = md.split("## Architecture", 1)[1].split("## Key Commands", 1)[0]
+    assert "**2** layers detected" in arch_section
+    assert "routes" in arch_section
+    assert "models" in arch_section
 
 
 def test_repo_map_omitted_when_no_structure():
@@ -346,7 +384,13 @@ def test_agents_snapshot_matches():
         file_count=3, dir_count=2,
     )
     scripts = ScriptsResult(package_json={"test": "pytest", "build": "python build.py"})
-    md = gen.generate(readme_data=data, stats=stats, structure=structure, scripts=scripts)
+    arch = ArchitectureResult(
+        layers={"services": [Path("src/service.py")], "utils": [Path("src/helpers.py")]},
+        import_graph={"src/main.py": ["src/service", "src/helpers"], "src/service.py": ["src/helpers"]},
+        entry_points=[Path("src/main.py")],
+        circular_deps=[],
+    )
+    md = gen.generate(readme_data=data, stats=stats, structure=structure, scripts=scripts, arch=arch)
     assert md == (
         "# test-project\n"
         "\n"
@@ -378,6 +422,12 @@ def test_agents_snapshot_matches():
         "- **pyproject.toml** — Python project configuration\n"
         "- **src/** — Source code\n"
         "- **tests/** — Test suite\n"
+        "\n"
+        "## Architecture\n"
+        "\n"
+        "- **2** modules import **3** other modules\n"
+        "- **2** layers detected: services, utils\n"
+        "- Entry points: src/main.py\n"
         "\n"
         "## Key Commands\n"
         "\n"

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from repo_notes.extractors.architecture import ArchitectureResult
 from repo_notes.extractors.readme_data import ReadmeData
 from repo_notes.extractors.scripts import ScriptsResult
 from repo_notes.extractors.stats import StatsResult
@@ -92,12 +93,14 @@ class AgentsGenerator:
         structure: StructureResult | None = None,
         stats: StatsResult | None = None,
         scripts: ScriptsResult | None = None,
+        arch: ArchitectureResult | None = None,
     ) -> str:
         sections = [
             self._render_header(readme_data),
             self._render_tech_stack(stats, readme_data),
             self._render_structure(structure),
             self._render_repo_map(structure),
+            self._render_architecture(arch),
             self._render_commands(readme_data, scripts),
             self._render_howto(stats, readme_data),
         ]
@@ -188,6 +191,35 @@ class AgentsGenerator:
                 if child:
                     children.append(child)
         return children
+
+    def _render_architecture(self, arch: ArchitectureResult | None) -> str:
+        if not arch:
+            return ""
+        lines = ["## Architecture", ""]
+
+        if arch.import_graph:
+            import_count = sum(len(v) for v in arch.import_graph.values())
+            m_label = "module" if len(arch.import_graph) == 1 else "modules"
+            v_label = "other module" if import_count == 1 else "other modules"
+            v_verb = "imports" if len(arch.import_graph) == 1 else "import"
+            lines.append(f"- **{len(arch.import_graph)}** {m_label} {v_verb} **{import_count}** {v_label}")
+
+        if arch.layers:
+            layer_labels = ", ".join(sorted(arch.layers.keys()))
+            lines.append(f"- **{len(arch.layers)}** layers detected: {layer_labels}")
+
+        if arch.entry_points:
+            eps = ", ".join(str(f) for f in arch.entry_points)
+            lines.append(f"- Entry points: {eps}")
+
+        if arch.circular_deps:
+            lines.append(f"- **{len(arch.circular_deps)}** circular dependenc{'y' if len(arch.circular_deps) == 1 else 'ies'} detected")
+            for cycle in arch.circular_deps:
+                arrow_chain = " → ".join(cycle)
+                lines.append(f"  - `{arrow_chain}`")
+
+        lines.append("")
+        return "\n".join(lines)
 
     def _render_commands(self, data: ReadmeData | None, scripts: ScriptsResult | None) -> str:
         lines = ["## Key Commands", ""]

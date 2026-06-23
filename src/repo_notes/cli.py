@@ -392,6 +392,7 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
             structure=results.get("structure"),
             stats=results.get("stats"),
             scripts=results.get("scripts"),
+            arch=results.get("arch"),
         )
         agents_output = root / "AGENTS.md"
         agents_output.write_text(agents_md, encoding="utf-8")
