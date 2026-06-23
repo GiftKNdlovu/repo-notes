@@ -33,7 +33,7 @@ class ComplexityExtractor:
 
             fn_lengths = self._function_lengths(content)
             all_fn_lengths.extend(fn_lengths)
-            max_nest = self._max_nesting(content)
+            max_nest = self._max_nesting(content, extension=f.extension)
             global_max_nesting = max(global_max_nesting, max_nest)
 
             flagged = []
@@ -90,18 +90,58 @@ class ComplexityExtractor:
 
         return [ln for ln in lengths if ln > 1]
 
-    def _max_nesting(self, content: str) -> int:
+    def _max_nesting(self, content: str, extension: str = "") -> int:
+        is_python = extension in (".py", ".pyw", ".pyx")
+        if not is_python and not extension:
+            is_python = self._looks_like_python(content)
+        if is_python:
+            return self._python_nesting(content)
+        return self._brace_nesting(content)
+
+    @staticmethod
+    def _looks_like_python(content: str) -> bool:
+        for line in content.split("\n"):
+            stripped = line.strip()
+            if re.match(r"^\s*(?:def\s+|class\s+|elif\s+|except\s+|finally\s+)", stripped):
+                return True
+        return False
+
+    def _python_nesting(self, content: str) -> int:
+        max_depth = 0
+        block_indents: list[int] = []
+        comment_prefixes = ("#", '"""', "'''", "//", "/*", "*", '"', "'")
+
+        for line in content.split("\n"):
+            stripped = line.strip()
+            if not stripped or stripped.startswith(comment_prefixes):
+                continue
+
+            leading = len(line) - len(line.lstrip())
+
+            while block_indents and block_indents[-1] >= leading:
+                block_indents.pop()
+
+            if re.match(
+                r"^\s*(?:if|for|while|with|try|except|def|class|elif|else|finally)\b",
+                stripped,
+            ):
+                if not block_indents or leading > block_indents[-1]:
+                    block_indents.append(leading)
+
+            max_depth = max(max_depth, len(block_indents))
+
+        return max_depth
+
+    def _brace_nesting(self, content: str) -> int:
         max_depth = 0
         depth = 0
         for line in content.split("\n"):
             stripped = line.strip()
             if not stripped or stripped.startswith(("#", "//", "/*", "*", '"', "'")):
                 continue
-            depth += stripped.count("{") + stripped.count("(") + stripped.count("[")
-            # Count indent-based nesting for Python
-            if re.match(r"^\s*(?:if|for|while|with|try|except|def|class)\b", stripped):
-                depth += 1
-            depth -= stripped.count("}") + stripped.count(")") + stripped.count("]")
+            opens = stripped.count("{") + stripped.count("(") + stripped.count("[")
+            closes = stripped.count("}") + stripped.count(")") + stripped.count("]")
+            depth += opens - closes
             depth = max(depth, 0)
             max_depth = max(max_depth, depth)
         return max_depth
