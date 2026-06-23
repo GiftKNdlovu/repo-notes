@@ -204,6 +204,11 @@ class AgentsGenerator:
             v_verb = "imports" if len(arch.import_graph) == 1 else "import"
             lines.append(f"- **{len(arch.import_graph)}** {m_label} {v_verb} **{import_count}** {v_label}")
 
+        if arch.coupling_hotspots:
+            top = arch.coupling_hotspots[:3]
+            for h in top:
+                lines.append(f"- `{h.file}` — {h.total} connections ({h.incoming} in, {h.outgoing} out)")
+
         if arch.layers:
             layer_labels = ", ".join(sorted(arch.layers.keys()))
             lines.append(f"- **{len(arch.layers)}** layers detected: {layer_labels}")

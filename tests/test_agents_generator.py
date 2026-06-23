@@ -142,6 +142,24 @@ def test_architecture_with_circular_deps():
     assert "mod_c.py" in arch_section
 
 
+def test_architecture_with_coupling_hotspots():
+    gen = AgentsGenerator(Path("root"))
+    from repo_notes.extractors.architecture import CouplingHotspot
+    arch = ArchitectureResult(
+        layers={},
+        import_graph={"hub.py": ["a", "b"], "a.py": ["b"]},
+        coupling_hotspots=[
+            CouplingHotspot(file="hub.py", outgoing=2, incoming=0, total=2),
+            CouplingHotspot(file="a.py", outgoing=1, incoming=0, total=1),
+        ],
+    )
+    md = gen.generate(arch=arch)
+    arch_section = md.split("## Architecture", 1)[1].split("## Key Commands", 1)[0]
+    assert "hub.py" in arch_section
+    assert "2 connections" in arch_section
+    assert "a.py" in arch_section
+
+
 def test_architecture_with_layers_only():
     gen = AgentsGenerator(Path("root"))
     arch = ArchitectureResult(

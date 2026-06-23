@@ -4,7 +4,7 @@ Scan a code repository and generate useful project notes
 
 ## Tech Stack
 
-- **Languages**: Python
+- **Languages**: Python, Shell
 - **Python**: >=3.10
 - **Runtime deps**: click, pyyaml, pathspec, rich
 
@@ -36,11 +36,21 @@ src/
     detectors/
       __init__.py
       base.py
+      c_cpp.py
+      docker.py
       go.py
+      java.py
       javascript.py
+      kotlin.py
+      php.py
       python.py
+      r_lang.py
       registry.py
+      ruby.py
       rust.py
+      shell.py
+      sql.py
+      swift.py
     extractors/
       __init__.py
       api_endpoints.py
@@ -70,6 +80,7 @@ tests/
   __init__.py
   test_agents_generator.py
   test_api_endpoints_extractor.py
+  test_architecture_extractor.py
   test_cache.py
   test_cicd_extractor.py
   test_complexity_extractor.py
@@ -89,7 +100,7 @@ tests/
   test_type_coverage_extractor.py
 ```
 
-*68 files, 7 directories*
+*79 files, 7 directories*
 
 ## Repository Map
 
@@ -106,6 +117,15 @@ tests/
 - **scripts/** — Build and utility scripts
 - **src/** — Source code
 - **tests/** — Test suite
+
+## Architecture
+
+- **66** modules import **306** other modules
+- `src/repo_notes/scanner.py` — 33 connections (33 in, 0 out)
+- `tests/test_detectors.py` — 15 connections (0 in, 15 out)
+- `src/repo_notes/file_cache.py` — 10 connections (10 in, 0 out)
+- **3** layers detected: config, routes, tests
+- Entry points: tests/test_integration.py, src/repo_notes/__main__.py, src/repo_notes/cli.py, benchmarks/benchmark.py
 
 ## Key Commands
 
@@ -127,7 +147,7 @@ ruff check .
 
 ## How to Work on This Project
 
-This is a **Python** (requires Python >=3.10) project.
+This is a **Python, Shell** (requires Python >=3.10) project.
 
 Before committing changes, run tests and lint to verify nothing is broken.
 

@@ -121,6 +121,36 @@ def test_architecture_compact_dependency_summary():
     assert "a.py → b.py → c.py → a.py" in md
 
 
+def test_architecture_coupling_hotspots_rendered():
+    gen = MarkdownGenerator(Path("root"))
+    from repo_notes.extractors.architecture import CouplingHotspot
+    md = gen.generate(
+        arch=ArchitectureResult(
+            layers={},
+            entry_points=[],
+            import_graph={"hub.py": ["a", "b"], "a.py": ["b"]},
+            coupling_hotspots=[
+                CouplingHotspot(file="hub.py", outgoing=2, incoming=0, total=2),
+                CouplingHotspot(file="a.py", outgoing=1, incoming=0, total=1),
+            ],
+        )
+    )
+    assert "High-Coupling Files" in md
+    assert "hub.py" in md
+    assert "2 connections" in md
+    assert "0 incoming, 2 outgoing" in md or "2 outgoing, 0 incoming" in md
+
+
+def test_architecture_coupling_hotspots_empty():
+    gen = MarkdownGenerator(Path("root"))
+    md = gen.generate(
+        arch=ArchitectureResult(
+            import_graph={"a.py": ["b"]},
+        )
+    )
+    assert "High-Coupling Files" not in md
+
+
 def test_architecture_no_circular_deps():
     gen = MarkdownGenerator(Path("root"))
     md = gen.generate(

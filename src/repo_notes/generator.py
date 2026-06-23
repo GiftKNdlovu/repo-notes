@@ -348,6 +348,13 @@ class MarkdownGenerator:
     def _render_architecture(self, result: ArchitectureResult) -> str:
         lines = ["## Architecture Overview", ""]
 
+        if result.coupling_hotspots:
+            lines.append("### High-Coupling Files")
+            lines.append("")
+            for h in result.coupling_hotspots[:5]:
+                lines.append(f"- `{h.file}` — {h.total} connections ({h.incoming} incoming, {h.outgoing} outgoing)")
+            lines.append("")
+
         if result.layers:
             layer_lines = ["### Detected Layers", ""]
             for layer, files in sorted(result.layers.items()):

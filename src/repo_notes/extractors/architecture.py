@@ -21,11 +21,20 @@ LAYER_PATTERNS = {
 
 
 @dataclass(slots=True)
+class CouplingHotspot:
+    file: str
+    outgoing: int
+    incoming: int
+    total: int
+
+
+@dataclass(slots=True)
 class ArchitectureResult:
     layers: dict[str, list[Path]] = field(default_factory=dict)
     import_graph: dict[str, list[str]] = field(default_factory=dict)
     entry_points: list[Path] = field(default_factory=list)
     circular_deps: list[list[str]] = field(default_factory=list)
+    coupling_hotspots: list[CouplingHotspot] = field(default_factory=list)
 
 
 class ArchitectureExtractor:
@@ -64,11 +73,15 @@ class ArchitectureExtractor:
 
         circular_deps = self._detect_circular_deps(import_graph)
 
+        known_files = {f.relative_path.as_posix() for f in files if not f.is_binary}
+        coupling_hotspots = self._compute_coupling_hotspots(import_graph, known_files)
+
         return ArchitectureResult(
             layers=dict(layers),
             import_graph=dict(import_graph),
             entry_points=entry_points,
             circular_deps=circular_deps,
+            coupling_hotspots=coupling_hotspots,
         )
 
     def _detect_layer(self, path: Path) -> str | None:
@@ -118,6 +131,60 @@ class ArchitectureExtractor:
             for match in re.finditer(r"^\s*use\s+([^;]+);", content, re.MULTILINE):
                 imports.append(match.group(1).split("::")[0])
         return imports
+
+    @staticmethod
+    def _compute_coupling_hotspots(
+        import_graph: dict[str, list[str]],
+        known_files: set[str],
+    ) -> list[CouplingHotspot]:
+        def _resolve(target: str) -> str | None:
+            if target in known_files:
+                return target
+            if target + ".py" in known_files:
+                return target + ".py"
+            name = target.split(".")[-1]
+            if name + ".py" in known_files:
+                return name + ".py"
+            stem = target.replace(".", "/")
+            for kf in known_files:
+                if kf == stem or kf == stem + ".py":
+                    return kf
+                if kf.endswith("/" + stem) or kf.endswith("/" + stem + ".py"):
+                    return kf
+            return None
+
+        outgoing: dict[str, int] = {}
+        incoming: dict[str, int] = {}
+        all_modules: set[str] = set()
+
+        for src, targets in import_graph.items():
+            local_targets = []
+            for t in targets:
+                resolved = _resolve(t)
+                if resolved:
+                    local_targets.append(resolved)
+            outgoing[src] = len(local_targets)
+            all_modules.add(src)
+            for resolved in local_targets:
+                incoming[resolved] = incoming.get(resolved, 0) + 1
+                all_modules.add(resolved)
+
+        hotspots = []
+        for mod in sorted(all_modules):
+            out_c = outgoing.get(mod, 0)
+            in_c = incoming.get(mod, 0)
+            total = out_c + in_c
+            if total == 0:
+                continue
+            hotspots.append(CouplingHotspot(
+                file=mod,
+                outgoing=out_c,
+                incoming=in_c,
+                total=total,
+            ))
+
+        hotspots.sort(key=lambda h: (-h.total, -h.outgoing, h.file))
+        return hotspots[:10]
 
     @staticmethod
     def _detect_circular_deps(import_graph: dict[str, list[str]]) -> list[list[str]]:
