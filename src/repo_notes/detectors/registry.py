@@ -22,7 +22,7 @@ KOTLIN_INFO = LanguageInfo("kotlin", "mobile", frozenset({".kt", ".kts"}))
 R_LANG_INFO = LanguageInfo("r", "data", frozenset({".r", ".rmd"}))
 SHELL_INFO = LanguageInfo("shell", "infra", frozenset({".sh", ".bash", ".zsh", ".fish", ".ps1"}))
 SQL_INFO = LanguageInfo("sql", "database", frozenset({".sql"}))
-DOCKER_INFO = LanguageInfo("docker", "infra", frozenset())
+DOCKER_INFO = LanguageInfo("docker", "infra", frozenset({".dockerfile"}))
 
 _DOCKER_FILENAMES = frozenset({
     "dockerfile", "docker-compose.yml", "docker-compose.yaml",
@@ -48,12 +48,10 @@ class DetectorRegistry:
     def get_for_extension(self, ext: str) -> LanguageInfo | None:
         return self._extension_map.get(ext.lower())
 
-    def classify(self, path: Path, content_preview: str | None = None) -> LanguageInfo | None:
+    def classify(self, path: Path) -> LanguageInfo | None:
         name_lower = path.name.lower()
         if name_lower in self._filename_map:
             return self._filename_map[name_lower]
-        if path.suffix.lower() == ".dockerfile":
-            return self._filename_map.get("dockerfile", DOCKER_INFO)
         ext = path.suffix.lower()
         return self._extension_map.get(ext)
 
