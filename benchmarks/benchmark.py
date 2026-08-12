@@ -5,7 +5,6 @@ Usage: python benchmarks/benchmark.py [--runs N] [--quiet]
 """
 
 import argparse
-import contextlib
 import os
 import shutil
 import statistics
@@ -15,7 +14,6 @@ import tempfile
 import textwrap
 import time
 from pathlib import Path
-
 
 REPO_SIZES = {
     "tiny": {"files": 5, "dirs": 2},

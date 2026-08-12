@@ -1,47 +1,72 @@
-"""Detector registry for auto-discovery."""
+"""Detector registry for data-driven language classification."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .base import LanguageDetector, LanguageInfo
+from .base import LanguageInfo
+
+# Pre-defined Language Info constants
+PYTHON_INFO = LanguageInfo("python", "backend", frozenset({".py", ".pyi", ".pyx", ".pxd", ".pxi", ".ipynb"}))
+JS_INFO = LanguageInfo("javascript", "frontend", frozenset({".js", ".jsx", ".mjs", ".cjs"}))
+TS_INFO = LanguageInfo("typescript", "frontend", frozenset({".ts", ".tsx", ".mts", ".cts"}))
+GO_INFO = LanguageInfo("go", "backend", frozenset({".go"}))
+RUST_INFO = LanguageInfo("rust", "systems", frozenset({".rs"}))
+JAVA_INFO = LanguageInfo("java", "backend", frozenset({".java", ".jar", ".war"}))
+C_CPP_INFO = LanguageInfo("c/c++", "systems", frozenset({".c", ".h", ".cpp", ".hpp", ".cc", ".cxx", ".hh", ".hxx"}))
+RUBY_INFO = LanguageInfo("ruby", "backend", frozenset({".rb", ".rake", ".gemspec"}))
+PHP_INFO = LanguageInfo("php", "backend", frozenset({".php", ".phtml", ".php5", ".php7"}))
+SWIFT_INFO = LanguageInfo("swift", "mobile", frozenset({".swift"}))
+KOTLIN_INFO = LanguageInfo("kotlin", "mobile", frozenset({".kt", ".kts"}))
+R_LANG_INFO = LanguageInfo("r", "data", frozenset({".r", ".rmd"}))
+SHELL_INFO = LanguageInfo("shell", "infra", frozenset({".sh", ".bash", ".zsh", ".fish", ".ps1"}))
+SQL_INFO = LanguageInfo("sql", "database", frozenset({".sql"}))
+DOCKER_INFO = LanguageInfo("docker", "infra", frozenset())
+
+_DOCKER_FILENAMES = frozenset({
+    "dockerfile", "docker-compose.yml", "docker-compose.yaml",
+    "docker-compose.override.yml", "docker-compose.override.yaml",
+})
 
 
 @dataclass
 class DetectorRegistry:
-    _detectors: list[LanguageDetector] = field(default_factory=list)
-    _extension_map: dict[str, LanguageDetector] = field(default_factory=dict)
+    _languages: list[LanguageInfo] = field(default_factory=list)
+    _extension_map: dict[str, LanguageInfo] = field(default_factory=dict)
+    _filename_map: dict[str, LanguageInfo] = field(default_factory=dict)
 
-    def register(self, detector: LanguageDetector) -> None:
-        self._detectors.append(detector)
-        for ext in detector.language_info.extensions:
-            self._extension_map[ext] = detector
+    def register(self, info: LanguageInfo, filenames: set[str] | frozenset[str] | None = None) -> None:
+        if info not in self._languages:
+            self._languages.append(info)
+        for ext in info.extensions:
+            self._extension_map[ext.lower()] = info
+        if filenames:
+            for fname in filenames:
+                self._filename_map[fname.lower()] = info
 
-    def get_for_extension(self, ext: str) -> LanguageDetector | None:
+    def get_for_extension(self, ext: str) -> LanguageInfo | None:
         return self._extension_map.get(ext.lower())
 
     def classify(self, path: Path, content_preview: str | None = None) -> LanguageInfo | None:
+        name_lower = path.name.lower()
+        if name_lower in self._filename_map:
+            return self._filename_map[name_lower]
+        if path.suffix.lower() == ".dockerfile":
+            return self._filename_map.get("dockerfile", DOCKER_INFO)
         ext = path.suffix.lower()
-        detector = self._extension_map.get(ext)
-        if detector:
-            return detector.classify(path, content_preview)
-        for detector in self._detectors:
-            result = detector.classify(path, content_preview)
-            if result:
-                return result
-        return None
+        return self._extension_map.get(ext)
 
     def get_enabled(self, enabled: list[str]) -> DetectorRegistry:
         """Return new registry with only enabled detectors."""
         if "all" in enabled:
             return self
+        enabled_set = {e.lower() for e in enabled}
         new_registry = DetectorRegistry()
-        for detector in self._detectors:
-            if detector.language_info.name.lower() in enabled:
-                new_registry.register(detector)
+        for info in self._languages:
+            if info.name.lower() in enabled_set:
+                fnames = {fname for fname, lang in self._filename_map.items() if lang == info}
+                new_registry.register(info, filenames=fnames if fnames else None)
         return new_registry
 
 
@@ -57,34 +82,18 @@ def get_registry() -> DetectorRegistry:
 
 
 def _register_builtin(registry: DetectorRegistry) -> None:
-    from . import (
-        c_cpp,
-        docker,
-        go,
-        java,
-        javascript,
-        kotlin,
-        php,
-        python,
-        r_lang,
-        ruby,
-        rust,
-        shell,
-        sql,
-        swift,
-    )
-    registry.register(python.PythonDetector())
-    registry.register(javascript.JavaScriptDetector())
-    registry.register(javascript.TypeScriptDetector())
-    registry.register(go.GoDetector())
-    registry.register(rust.RustDetector())
-    registry.register(java.JavaDetector())
-    registry.register(c_cpp.CppDetector())
-    registry.register(ruby.RubyDetector())
-    registry.register(php.PhpDetector())
-    registry.register(swift.SwiftDetector())
-    registry.register(kotlin.KotlinDetector())
-    registry.register(r_lang.RDetector())
-    registry.register(shell.ShellDetector())
-    registry.register(sql.SqlDetector())
-    registry.register(docker.DockerDetector())
+    registry.register(PYTHON_INFO)
+    registry.register(JS_INFO)
+    registry.register(TS_INFO)
+    registry.register(GO_INFO)
+    registry.register(RUST_INFO)
+    registry.register(JAVA_INFO)
+    registry.register(C_CPP_INFO)
+    registry.register(RUBY_INFO)
+    registry.register(PHP_INFO)
+    registry.register(SWIFT_INFO)
+    registry.register(KOTLIN_INFO)
+    registry.register(R_LANG_INFO)
+    registry.register(SHELL_INFO)
+    registry.register(SQL_INFO)
+    registry.register(DOCKER_INFO, filenames=_DOCKER_FILENAMES)
