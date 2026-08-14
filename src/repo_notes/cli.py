@@ -212,17 +212,16 @@ def cli(path, config, output, max_depth, include_hidden, format, force, quiet, n
     """Scan REPO_PATH and generate project notes."""
     root = path.resolve()
     git_root = _find_git_root(root)
-
-    if mcp:
-        from repo_notes.mcp_server import MCPServer
-        MCPServer(root).run_stdio()
-        return
-
     output_console = Console(file=open(os.devnull, "w")) if quiet else console
 
     if git_root and git_root != root:
         output_console.print(f"[dim]Auto-detected git root: {git_root}[/dim]")
         root = git_root
+
+    if mcp:
+        from repo_notes.mcp_server import MCPServer
+        MCPServer(root).run_stdio()
+        return
     cfg = Config.load(root=root, path=config)
 
     # --init: generate config template

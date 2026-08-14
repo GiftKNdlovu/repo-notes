@@ -101,7 +101,7 @@ class MCPServer:
                 "result": {"tools": TOOLS_LIST},
             }
 
-        if msg_id is not None:
+        if "id" in req:
             return {
                 "jsonrpc": "2.0",
                 "id": msg_id,
@@ -113,6 +113,10 @@ class MCPServer:
 
         return None
 
+    def _send_response(self, resp: dict[str, Any]) -> None:
+        sys.stdout.write(json.dumps(resp) + "\n")
+        sys.stdout.flush()
+
     def run_stdio(self) -> None:
         """Run stdio JSON-RPC loop reading stdin and writing stdout."""
         for line in sys.stdin:
@@ -123,13 +127,11 @@ class MCPServer:
                 req = json.loads(line)
                 resp = self.handle_request(req)
                 if resp is not None:
-                    sys.stdout.write(json.dumps(resp) + "\n")
-                    sys.stdout.flush()
+                    self._send_response(resp)
             except json.JSONDecodeError:
                 err = {
                     "jsonrpc": "2.0",
                     "id": None,
                     "error": {"code": -32700, "message": "Parse error"},
                 }
-                sys.stdout.write(json.dumps(err) + "\n")
-                sys.stdout.flush()
+                self._send_response(err)
