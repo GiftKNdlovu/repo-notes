@@ -202,23 +202,21 @@ def _find_git_root(path: Path) -> Path | None:
     default=False,
     help="Generate AGENTS.md with agent-oriented repo summary",
 )
-def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, init, replace_readme, agents):
-    """Scan REPO_PATH and generate project notes.
-
-    By default, generates REPO_NOTES.md with detailed technical notes.
-    README.md is treated as hand-written project documentation and is never
-    overwritten by default. Use --format readme to generate a starter rnREADME.md
-    alongside your existing hand-written README.
-
-    Use --format readme --replace-readme --force to overwrite README.md with
-    generated output (destructive -- use with care).
-
-    Use --output to set a custom path for single-artifact formats (notes, readme,
-    html, json, agents). With --format both, --output controls the notes file and
-    readme is written as a sibling.
-    """
+@click.option(
+    "--mcp",
+    is_flag=True,
+    default=False,
+    help="Run Model Context Protocol (MCP) stdio JSON-RPC server loop",
+)
+def cli(path, config, output, max_depth, include_hidden, format, force, quiet, no_cache, init, replace_readme, agents, mcp):
+    """Scan REPO_PATH and generate project notes."""
     root = path.resolve()
     git_root = _find_git_root(root)
+
+    if mcp:
+        from repo_notes.mcp_server import MCPServer
+        MCPServer(root).run_stdio()
+        return
 
     output_console = Console(file=open(os.devnull, "w")) if quiet else console
 
